@@ -1,0 +1,2659 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+  <!-- PWA -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Ração">
+  <meta name="theme-color" content="#1a6b3c">
+  <link rel="manifest" href="manifest.json">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Ração</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<style>
+:root {
+  --green:#1a6b3c; --green2:#2d8f55; --green3:#e6f4ed; --green4:#c3e6d2;
+  --amber:#b45309; --amber-bg:#fef3c7;
+  --red:#991b1b; --red-bg:#fee2e2;
+  --blue:#1d4ed8; --blue-bg:#eff6ff; --blue-bd:#bfdbfe;
+  --text:#1a1a1a; --text2:#4b5563; --text3:#9ca3af;
+  --border:#e5e7eb; --bg:#f8faf9; --white:#ffffff;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:16px;line-height:1.6;}
+.app-header{background:var(--green);color:#fff;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px;}
+.app-header h1{font-size:18px;font-weight:600;letter-spacing:-.02em;}
+.app-header span{font-size:12px;opacity:.6;font-family:'DM Mono',monospace;}
+.tab-bar{background:var(--white);border-bottom:1px solid var(--border);display:flex;padding:0 24px;gap:0;overflow-x:auto;}
+.tab{padding:13px 18px;font-size:14px;font-weight:500;color:var(--text2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .15s;white-space:nowrap;}
+.tab:hover{color:var(--green);}
+.tab.active{color:var(--green);border-bottom-color:var(--green);}
+.db-bar{background:var(--green3);border-bottom:1px solid var(--green4);padding:6px 24px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.db-bar span{font-size:13px;color:var(--text3);}
+.db-btn{display:inline-flex;align-items:center;gap:4px;padding:5px 13px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--green4);background:var(--white);color:var(--green);transition:all .15s;font-family:'DM Sans',sans-serif;}
+.db-btn:hover{background:var(--green);color:#fff;}
+.db-btn.danger{color:var(--red);border-color:#fca5a5;}
+.db-btn.danger:hover{background:var(--red);color:#fff;}
+.db-saved{font-size:13px;color:var(--text3);margin-left:auto;}
+.page{display:none;padding:24px;max-width:1100px;margin:0 auto;}
+.page.active{display:block;}
+.sec{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin:24px 0 8px;}
+.sec:first-child{margin-top:0;}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);margin-bottom:12px;}.card .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;row-gap:8px;}
+.card-title{font-size:15px;font-weight:600;color:var(--text2);}
+table{width:100%;border-collapse:collapse;}
+thead th{background:var(--green3);color:var(--green);font-size:13px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;padding:9px 12px;text-align:right;border-bottom:1px solid var(--green4);}
+thead th:first-child{text-align:left;}
+tbody tr:hover{background:#f6faf8;}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:15px;}
+tbody td:not(:first-child){text-align:right;}
+tbody tr:last-child td{border-bottom:none;}
+tfoot td{padding:11px 14px;background:var(--green3);font-weight:600;font-size:15px;text-align:right;border-top:1px solid var(--green4);}
+tfoot td:first-child{text-align:left;color:var(--green);}
+input[type="number"],input[type="date"],input[type="text"],textarea,select{width:100%;padding:5px 8px;border:1px solid var(--border);border-radius:6px;font-size:15px;font-family:'DM Sans',sans-serif;color:var(--text);background:#fff;transition:border-color .15s,box-shadow .15s;}
+input[type="number"]{text-align:right;font-family:'DM Mono',monospace;}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(45,143,85,.1);}
+tbody input{border-color:transparent;background:transparent;padding:3px 5px;}
+tbody input:hover{border-color:var(--border);background:#fff;}
+tbody input:focus{border-color:var(--green2);background:#fff;box-shadow:0 0 0 3px rgba(45,143,85,.1);}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--text2);transition:all .15s;font-family:'DM Sans',sans-serif;}
+.btn:hover{border-color:var(--green2);color:var(--green);background:var(--green3);}
+.btn-green{background:var(--green);color:#fff;border-color:var(--green);}
+.btn-green:hover{background:var(--green2);color:#fff;}
+.btn-ghost{background:none;border:none;color:var(--text3);cursor:pointer;padding:3px 5px;border-radius:4px;font-size:14px;line-height:1;transition:all .1s;}
+.btn-ghost:hover{color:var(--red);background:var(--red-bg);}
+.metrics{display:grid;gap:10px;}
+.g2{grid-template-columns:repeat(2,1fr);}
+.g3{grid-template-columns:repeat(3,1fr);}
+.g4{grid-template-columns:repeat(4,1fr);}
+.metric{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px 16px;box-shadow:var(--shadow);}
+.metric-label{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);margin-bottom:5px;}
+.metric-value{font-size:22px;font-weight:600;color:var(--text);font-family:'DM Mono',monospace;}
+.metric.accent{border-color:var(--green4);background:var(--green3);}
+.metric.accent .metric-value{color:var(--green);}
+.alert{padding:10px 14px;border-radius:7px;font-size:14px;font-weight:500;display:none;margin-bottom:10px;}
+.alert-warn{background:var(--amber-bg);color:var(--amber);border:1px solid #fcd34d;}
+.alert-ok{background:var(--green3);color:var(--green);border:1px solid var(--green4);}
+.lote-row{display:flex;align-items:center;gap:12px;margin-bottom:16px;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:12px 16px;box-shadow:var(--shadow);}
+.lote-row label{font-size:15px;font-weight:600;white-space:nowrap;}
+.lote-row input{width:110px;font-size:17px;font-weight:600;text-align:center;}
+.val{font-family:'DM Mono',monospace;color:var(--green);font-weight:500;}
+.computed{color:var(--text2);font-family:'DM Mono',monospace;font-size:15px;}
+/* presets */
+.presets-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-start;}
+.preset-brand{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);min-width:150px;flex:1;}
+.preset-brand-name{font-size:13px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--green);margin-bottom:7px;}
+.preset-phases{display:flex;flex-direction:column;gap:4px;margin-bottom:7px;}
+.preset-phase{display:flex;align-items:center;gap:5px;}
+.preset-phase-btn{flex:1;padding:7px 10px;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--green4);background:var(--green3);color:var(--green);transition:all .15s;font-family:'DM Sans',sans-serif;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.preset-phase-btn:hover{background:var(--green);color:#fff;}
+.preset-add-btn{width:100%;font-size:13px;padding:5px 9px;justify-content:center;}
+.preset-add-brand-btn{padding:10px 16px;font-size:14px;align-self:center;border-style:dashed;}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.modal{background:var(--white);border-radius:14px;padding:22px;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2);}
+.modal h3{font-size:17px;font-weight:700;color:var(--green);margin-bottom:14px;}
+.preset-ing-row{display:grid;grid-template-columns:1fr 75px 75px 28px;gap:7px;align-items:center;margin-bottom:7px;}
+.preset-ing-row input{padding:6px 8px;border:1px solid var(--border);border-radius:6px;font-size:14px;font-family:'DM Sans',sans-serif;}
+.preset-ing-row input[type="number"]{text-align:right;font-family:'DM Mono',monospace;}
+.col-lbl{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:.04em;text-transform:uppercase;}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid var(--border);}
+/* period cards */
+.period-card{background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+.period-card-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--green3);border-bottom:1px solid var(--green4);}
+.period-card-name{font-size:15px;font-weight:600;color:var(--green);}
+.period-card-meta{font-size:13px;color:var(--green2);}
+.period-card-body{display:grid;grid-template-columns:repeat(4,1fr);}
+.period-metric{padding:14px 16px;border-right:1px solid var(--border);}
+.period-metric:last-child{border-right:none;}
+.period-metric-label{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;}
+.period-metric-value{font-size:19px;font-weight:600;font-family:'DM Mono',monospace;}
+.period-metric.highlight .period-metric-value{color:var(--green);}
+/* info */
+.info-section{background:var(--white);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;box-shadow:var(--shadow);overflow:hidden;}
+.info-section-head{padding:14px 20px;background:var(--green);color:#fff;font-size:14px;font-weight:600;}
+.info-section-body{padding:18px;}
+.info-grid{display:grid;gap:14px;}
+.info-grid.g2{grid-template-columns:1fr 1fr;}
+.info-grid.g3{grid-template-columns:1fr 1fr 1fr;}
+.info-field label{display:block;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);margin-bottom:4px;}
+.info-field input,.info-field textarea,.info-field select{background:var(--bg);}
+.info-field textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.info-divider{border:none;border-top:1px solid var(--border);margin:14px 0;}
+/* summary strip */
+.summary-strip{background:var(--green);color:#fff;border-radius:10px;padding:18px 22px;display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:18px;}
+.strip-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;opacity:.65;margin-bottom:3px;}
+.strip-value{font-size:22px;font-weight:600;font-family:'DM Mono',monospace;}
+/* comparador */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.compare-col{background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:var(--shadow);}
+.compare-col-head{padding:12px 16px;background:var(--green3);border-bottom:1px solid var(--green4);display:flex;align-items:center;justify-content:space-between;}
+.compare-col-name{font-size:15px;font-weight:600;color:var(--green);}
+.compare-ing-row{display:grid;grid-template-columns:1fr 70px 80px;gap:6px;padding:8px 14px;border-bottom:1px solid var(--border);align-items:center;font-size:14px;}
+.compare-ing-row:last-child{border-bottom:none;}
+.compare-total{padding:12px 16px;background:var(--green3);display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:15px;}
+.compare-winner{border:2px solid var(--green);}
+.compare-winner .compare-col-head{background:var(--green);color:#fff;}
+.compare-winner .compare-col-name{color:#fff;}
+/* estoque */
+.estoque-status{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+.est-ok{background:var(--green3);color:var(--green);}
+.est-low{background:var(--amber-bg);color:var(--amber);}
+.est-out{background:var(--red-bg);color:var(--red);}
+/* chart */
+.chart-wrap{position:relative;width:100%;padding:16px;}
+/* print */
+
+
+/* ── MOBILE PWA ── */
+html { -webkit-tap-highlight-color: transparent; scroll-behavior: smooth; }
+body { -webkit-overflow-scrolling: touch; overscroll-behavior: none; }
+input, select, textarea { font-size: 16px !important; }
+.tab-bar { -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.tab-bar::-webkit-scrollbar { display: none; }
+
+/* Safe areas (notch / home bar) */
+.app-header {
+  padding-left: max(24px, env(safe-area-inset-left));
+  padding-right: max(24px, env(safe-area-inset-right));
+  padding-top: env(safe-area-inset-top, 0);
+  height: calc(52px + env(safe-area-inset-top, 0));
+}
+.page {
+  padding-left: max(16px, env(safe-area-inset-left));
+  padding-right: max(16px, env(safe-area-inset-right));
+  padding-bottom: calc(80px + env(safe-area-inset-bottom, 0));
+}
+
+/* Touch targets */
+.btn { min-height: 44px; }
+.db-btn { min-height: 36px; }
+.btn-ghost { min-width: 36px; min-height: 36px; display:inline-flex; align-items:center; justify-content:center; font-size:18px; }
+select, input[type="number"], input[type="date"] { min-height: 44px; border-radius: 8px; }
+tbody td { padding: 12px 10px; }
+
+/* ── BOTTOM NAV for mobile ── */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom, 0));
+  z-index: 500;
+  box-shadow: 0 -2px 12px rgba(0,0,0,.08);
+}
+.bottom-nav-items {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+.bottom-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 10px;
+  transition: background .15s;
+  min-width: 52px;
+  border: none;
+  background: none;
+  font-family: 'DM Sans', sans-serif;
+}
+.bottom-nav-item:active { background: var(--green3); }
+.bottom-nav-item.active .nav-icon { background: var(--green3); color: var(--green); }
+.bottom-nav-item.active .nav-label { color: var(--green); font-weight: 600; }
+.nav-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  background: transparent;
+  color: var(--text3);
+  transition: all .15s;
+}
+.nav-label {
+  font-size: 10px;
+  color: var(--text3);
+  font-weight: 500;
+  white-space: nowrap;
+}
+/* More menu */
+.more-drawer {
+  display: none;
+  position: fixed;
+  bottom: calc(64px + env(safe-area-inset-bottom, 0));
+  left: 0; right: 0;
+  background: var(--white);
+  border-top: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  box-shadow: 0 -4px 24px rgba(0,0,0,.12);
+  z-index: 490;
+  padding: 12px 16px 8px;
+}
+.more-drawer.open { display: block; }
+.more-drawer-title { font-size: 12px; font-weight: 700; color: var(--text3); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; padding: 0 4px; }
+.more-drawer-items { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+.more-drawer-item {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  padding: 10px 6px; border-radius: 10px; cursor: pointer; border: none;
+  background: var(--bg); font-family: 'DM Sans', sans-serif;
+}
+.more-drawer-item:active { background: var(--green3); }
+.more-drawer-item.active { background: var(--green3); }
+.more-drawer-item span:first-child { font-size: 22px; }
+.more-drawer-item span:last-child { font-size: 11px; color: var(--text2); font-weight: 500; text-align: center; }
+.more-drawer-item.active span:last-child { color: var(--green); font-weight: 700; }
+.drawer-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.3);
+  z-index: 480;
+}
+.drawer-overlay.open { display: block; }
+
+/* Card improvements for mobile */
+.card { border-radius: 14px; }
+.metric { border-radius: 12px; padding: 14px; }
+.metric-value { font-size: 20px; }
+.period-card { border-radius: 14px; }
+
+/* Table scroll on mobile */
+.card > table, .card > div > table {
+  display: block;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  width: 100%;
+}
+.card > table thead, .card > table tbody, .card > table tfoot,
+.card > div > table thead, .card > div > table tbody, .card > div > table tfoot {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
+/* DB bar hidden on mobile - use FAB instead */
+@media(max-width: 768px) {
+  .tab-bar { display: none; }
+  .db-bar { display: none; }
+  .bottom-nav { display: flex; flex-direction: column; }
+  .page { padding: 16px; padding-bottom: calc(90px + env(safe-area-inset-bottom,0)); }
+  .app-header h1 { font-size: 16px; }
+  .app-header { padding: env(safe-area-inset-top,0) 16px 0; height: calc(48px + env(safe-area-inset-top,0)); }
+  .g4 { grid-template-columns: repeat(2,1fr); }
+  .g3 { grid-template-columns: repeat(2,1fr); }
+  .summary-strip { grid-template-columns: repeat(2,1fr); gap: 10px; padding: 14px; }
+  .strip-value { font-size: 18px; }
+  .period-card-body { grid-template-columns: repeat(2,1fr); }
+  .compare-grid { grid-template-columns: 1fr; }
+  .presets-bar { gap: 8px; }
+  .preset-brand { min-width: 140px; }
+  .lote-row { flex-wrap: wrap; gap: 8px; }
+  .metrics { gap: 8px; }
+  .card-header { gap: 8px; }
+  .sec { margin: 18px 0 6px; }
+  /* Collapsible sections */
+  .info-grid.g3 { grid-template-columns: 1fr; }
+  .info-grid.g2 { grid-template-columns: 1fr; }
+  /* Bigger presets tap area */
+  .preset-phase-btn { min-height: 38px; font-size: 13px; }
+  /* Modal */
+  .modal { width: 100% !important; max-width: 100%; margin: 0; border-radius: 20px 20px 0 0; position: fixed; bottom: 0; left: 0; right: 0; max-height: 85vh; }
+  .overlay { align-items: flex-end; }
+  /* FAB save button */
+  .fab-save {
+    display: flex;
+    position: fixed;
+    bottom: calc(72px + env(safe-area-inset-bottom,0));
+    right: 16px;
+    width: 52px; height: 52px;
+    background: var(--green);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    font-size: 22px;
+    box-shadow: 0 4px 16px rgba(26,107,60,.4);
+    cursor: pointer;
+    z-index: 400;
+    align-items: center; justify-content: center;
+  }
+}
+
+/* Install banner */
+#install-banner {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: var(--green);
+  color: #fff;
+  padding: 14px 20px calc(14px + env(safe-area-inset-bottom, 0));
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  z-index: 2000;
+  font-size: 14px;
+  box-shadow: 0 -4px 20px rgba(0,0,0,.2);
+}
+#install-banner.hidden { display: none !important; }
+#install-banner:not(.hidden) { display: flex; }
+#install-banner-close { background:none; border:none; color:#fff; font-size:22px; cursor:pointer; padding:0 4px; min-width:36px; min-height:36px; }
+#install-banner-btn { background:#fff; color:var(--green); border:none; border-radius:8px; padding:10px 18px; font-weight:700; font-size:14px; cursor:pointer; white-space:nowrap; }
+
+.desktop-only{display:inline;}
+@media(max-width:768px){.desktop-only{display:none;}}
+
+
+/* ── PRESET ACCORDION ── */
+.preset-brand { cursor: default; }
+.preset-brand-header { display:flex; align-items:center; justify-content:space-between; cursor:pointer; padding: 4px 2px; border-radius: 6px; transition: background .15s; user-select: none; }
+.preset-brand-header:hover { background: var(--green3); }
+.preset-brand-header:active { background: var(--green4); }
+.preset-brand-name { font-size:13px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--green); }
+.preset-chevron { font-size:12px; color:var(--text3); transition: transform .2s; }
+.preset-brand.open .preset-chevron { transform: rotate(180deg); }
+.preset-phases { display:none; flex-direction:column; gap:4px; margin-top:8px; margin-bottom:7px; }
+.preset-brand.open .preset-phases { display:flex; }
+.preset-brand.open { border-color: var(--green4); box-shadow: 0 2px 8px rgba(26,107,60,.1); }
+.preset-add-btn { display:none; }
+.preset-brand.open .preset-add-btn { display:flex; }
+
+
+/* ── ESPÉCIES ── */
+.especie-card{background:var(--white);border:2px solid var(--border);border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:all .15s;box-shadow:var(--shadow);}
+.especie-card:hover{border-color:var(--green4);background:var(--green3);}
+.especie-card.active{border-color:var(--green);background:var(--green3);box-shadow:0 2px 12px rgba(26,107,60,.15);}
+.especie-card-icon{font-size:32px;display:block;margin-bottom:6px;}
+.especie-card-name{font-size:12px;font-weight:700;color:var(--text2);letter-spacing:.02em;}
+.especie-card.active .especie-card-name{color:var(--green);}
+.param-table{width:100%;border-collapse:collapse;margin-bottom:4px;}
+.param-table th{background:var(--green3);color:var(--green);font-size:11px;font-weight:600;padding:8px 12px;text-align:left;letter-spacing:.04em;text-transform:uppercase;}
+.param-table td{padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:top;}
+.param-table tr:last-child td{border-bottom:none;}
+.param-table td:first-child{font-weight:600;color:var(--text2);width:40%;}
+.param-table td:last-child{color:var(--text2);}
+.formula-ref-card{background:var(--white);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
+.formula-ref-head{background:var(--green3);padding:10px 14px;display:flex;align-items:center;justify-content:space-between;}
+.formula-ref-title{font-size:13px;font-weight:700;color:var(--green);}
+.formula-ref-ckg{font-size:12px;font-family:"DM Mono",monospace;color:var(--green2);}
+.formula-ref-body{padding:10px 14px;}
+.formula-ing-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.formula-ing-row:last-child{border-bottom:none;}
+.ing-badge{background:var(--green3);color:var(--green);font-size:11px;font-weight:600;padding:2px 7px;border-radius:20px;font-family:"DM Mono",monospace;}
+.especie-ing-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;}
+.especie-ing-item{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:var(--shadow);}
+.especie-ing-name{font-size:13px;font-weight:500;}
+.especie-ing-btn{background:var(--green3);color:var(--green);border:1px solid var(--green4);border-radius:6px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;}
+.especie-ing-btn:hover{background:var(--green);color:#fff;}
+
+/* ── DRAG & DROP ── */
+.drag-handle{cursor:grab;font-size:16px;color:var(--text3);padding:0 4px;line-height:1;user-select:none;flex-shrink:0;}
+.drag-handle:active{cursor:grabbing;}
+.preset-phase.dragging{opacity:.4;background:var(--green3);border-radius:8px;}
+.preset-phase.drag-over{border-top:2px solid var(--green);margin-top:-2px;}
+.preset-phase.touch-dragging{opacity:.5;transform:scale(0.97);}
+.drag-ghost{position:fixed;pointer-events:none;z-index:9999;background:var(--white);border:2px solid var(--green);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:600;color:var(--green);box-shadow:0 8px 24px rgba(0,0,0,.2);white-space:nowrap;max-width:220px;overflow:hidden;text-overflow:ellipsis;}
+@keyframes slideIn {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+/* status de conexão */
+.conn-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-family:'DM Mono',monospace;opacity:.85;}
+.conn-dot::before{content:'';width:8px;height:8px;border-radius:50%;background:#9ca3af;flex-shrink:0;}
+.conn-dot.online::before{background:#4ade80;box-shadow:0 0 6px #4ade80;}
+.conn-dot.offline::before{background:#fbbf24;}
+/* FAB escondido fora do mobile */
+.fab-save{display:none;}
+@media print{
+  .tab-bar,.db-bar,.btn,.db-btn,.btn-ghost,.preset-add-btn,.preset-add-brand-btn{display:none!important;}
+  .page{display:block!important;padding:0;}
+  .card,.info-section,.metric{box-shadow:none;border:1px solid #ccc;}
+}
+@media(max-width:700px){
+  .g4,.g3{grid-template-columns:repeat(2,1fr);}
+  .period-card-body{grid-template-columns:repeat(2,1fr);}
+  .period-metric{border-bottom:1px solid var(--border);}
+  .info-grid.g3,.info-grid.g2{grid-template-columns:1fr;}
+  .summary-strip{grid-template-columns:repeat(2,1fr);}
+  .compare-grid{grid-template-columns:1fr;}
+  .page{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>🌾 Calculadora de Ração</h1>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="conn-dot" id="conn-dot" title="Status da conexão">local</span>
+    <span class="db-saved-label" style="font-size:11px;opacity:.6;font-family:'DM Mono',monospace;"></span>
+    <span style="font-size:11px;opacity:.5;font-family:'DM Mono',monospace;" class="desktop-only">v6.0</span>
+  </div>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="showTab('formulacao',this)">Formulação</div>
+  <div class="tab" onclick="showTab('biblioteca',this)">Ingredientes & Preços</div>
+  <div class="tab" onclick="showTab('cronograma',this)">Cronograma</div>
+  <div class="tab" onclick="showTab('gastos',this)">Gastos</div>
+  <div class="tab" onclick="showTab('comparador',this)">Comparador</div>
+  <div class="tab" onclick="showTab('estoque',this)">Estoque</div>
+  <div class="tab" onclick="showTab('graficos',this)">Gráficos</div>
+  <div class="tab" onclick="showTab('especies',this)">Espécies</div>
+  <div class="tab" onclick="showTab('informacoes',this)">Informações</div>
+</div>
+
+<div class="db-bar">
+  <span>Banco de dados:</span>
+  <button class="db-btn" onclick="saveDB(true)">💾 Salvar</button>
+  <button class="db-btn" onclick="exportJSON()">⬇ Exportar</button>
+  <button class="db-btn" onclick="importJSON()">⬆ Importar</button>
+  <button class="db-btn" onclick="printReport()">🖨 Imprimir</button>
+  <button class="db-btn danger" onclick="clearDB()">✕ Limpar</button>
+  <span class="db-saved db-saved-label"></span>
+</div>
+
+<!-- ══ FORMULAÇÃO ══ -->
+<div class="page active" id="tab-formulacao">
+  <div class="lote-row">
+    <label>Tamanho do lote:</label>
+    <input type="number" id="lote-kg" value="100" min="1" step="1">
+    <span style="font-size:12px;color:var(--text3);">kg — base para quantidades</span>
+  </div>
+  <div class="sec" style="margin-top:0;">Fórmulas prontas por marca</div>
+  <div class="presets-bar" id="presets-bar">
+    <button class="btn preset-add-brand-btn" onclick="addPresetBrand()">+ Marca</button>
+  </div>
+  <div id="warn-pct" class="alert alert-warn">⚠ Soma: <span id="soma-pct">0</span>% — deve ser 100%</div>
+  <div id="ok-pct" class="alert alert-ok">✓ Formulação correta — soma: 100%</div>
+
+  
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Ingredientes</span>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+            <select id="biblio-select" style="font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);max-width:240px;" onchange="previewBiblioSelect(this)">
+              <option value="">＋ Adicionar da biblioteca...</option>
+            </select>
+            <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="addFromBiblioSelect()">Adicionar</button>
+            <button class="btn" onclick="addIng()">+ Em branco</button>
+          </div>
+        </div>
+        <table>
+          <colgroup><col style="width:4%"><col style="width:21%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:16%"><col style="width:16%"><col style="width:6%"></colgroup>
+          <thead><tr>
+            <th></th><th>Ingrediente</th><th>%</th><th>Qtd (kg)</th>
+            <th>Preço/kg</th><th>Custo lote</th><th>Custo/kg ração</th><th>Notas</th>
+          </tr></thead>
+          <tbody id="ing-body"></tbody>
+          <tfoot><tr>
+            <td colspan="2">Total</td>
+            <td id="foot-pct">—</td><td id="foot-qty">—</td>
+            <td>—</td><td id="foot-custo-lote">—</td><td id="foot-ckg">—</td><td></td>
+          </tr></tfoot>
+        </table>
+      </div>
+
+      <!-- SALVAR COMO -->
+      <div id="saveas-bar" style="display:none; background:var(--amber-bg); border:1px solid #fcd34d; border-radius:12px; padding:12px 16px; margin-bottom:14px; animation:slideIn .2s ease;">
+        <div style="font-size:12px;font-weight:600;color:var(--amber);margin-bottom:8px;">⚠ Formulação modificada — deseja salvar como nova fórmula?</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="saveas-brand" style="font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #fcd34d;background:#fff;min-width:140px;">
+            <option value="">— Selecionar marca —</option>
+          </select>
+          <input type="text" id="saveas-name" placeholder="Nome da fase (ex: Crescimento)" style="flex:1;min-width:160px;font-size:13px;padding:6px 10px;border-radius:8px;border:1px solid #fcd34d;background:#fff;">
+          <button class="btn btn-green" style="font-size:13px;white-space:nowrap;" onclick="saveAsPreset()">💾 Salvar fórmula</button>
+          <button class="btn" style="font-size:13px;" onclick="dismissSaveAs()">Ignorar</button>
+        </div>
+      </div>
+
+      <div class="sec">Resumo</div>
+      <div class="metrics g3">
+        <div class="metric accent"><div class="metric-label">Custo/kg ração</div><div class="metric-value" id="sum-ckg">—</div></div>
+        <div class="metric"><div class="metric-label">Custo do lote</div><div class="metric-value" id="sum-lote">—</div></div>
+        <div class="metric"><div class="metric-label">Ingredientes</div><div class="metric-value" id="sum-ning">—</div></div>
+      </div>
+</div>
+
+<!-- ══ INGREDIENTES & PREÇOS ══ -->
+<div class="page" id="tab-biblioteca">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Cadastre ingredientes, atualize preços de mercado e acompanhe o histórico. Clique em <strong>+ Usar</strong> para adicionar na formulação.</p>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Ingredientes cadastrados</span>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button class="btn btn-green" onclick="applyPrecos()">✓ Aplicar preços na formulação</button>
+        <button class="btn" onclick="addHistoricoEntry()">📋 Registrar preços de hoje</button>
+        <button class="btn" onclick="addBiblioItem()">+ Novo ingrediente</button>
+      </div>
+    </div>
+    <table>
+      <colgroup><col style="width:4%"><col style="width:24%"><col style="width:15%"><col style="width:14%"><col style="width:13%"><col style="width:12%"><col style="width:10%"><col style="width:8%"></colgroup>
+      <thead><tr>
+        <th></th>
+        <th style="text-align:left;">Nome</th>
+        <th>Preço atual (R$/kg)</th>
+        <th>Categoria</th>
+        <th>Último registrado</th>
+        <th>Variação</th>
+        <th>Observação</th>
+        <th>Ação</th>
+      </tr></thead>
+      <tbody id="biblio-body"></tbody>
+    </table>
+  </div>
+
+  <div class="sec">Filtrar por categoria</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;" id="biblio-filter-bar">
+    <button class="btn" style="font-size:11px;" onclick="filterBiblio('')">Todos</button>
+    <button class="btn" style="font-size:11px;" onclick="filterBiblio('Núcleo proteico')">Núcleos proteicos</button>
+    <button class="btn" style="font-size:11px;" onclick="filterBiblio('Energético')">Energéticos</button>
+    <button class="btn" style="font-size:11px;" onclick="filterBiblio('Proteico')">Proteicos</button>
+    <button class="btn" style="font-size:11px;" onclick="filterBiblio('Mineral')">Minerais</button>
+    <button class="btn" style="font-size:11px;" onclick="filterBiblio('Outro')">Outros</button>
+  </div>
+
+  <div class="sec">Histórico de preços</div>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Registros anteriores</span>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="historico-table">
+        <thead><tr id="historico-thead"><th style="text-align:left;">Data</th></tr></thead>
+        <tbody id="historico-body"><tr><td style="color:var(--text3);text-align:center;padding:18px;font-size:13px;">Nenhum registro ainda.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CRONOGRAMA ══ -->
+<div class="page" id="tab-cronograma">
+
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <label style="font-size:14px;font-weight:600;white-space:nowrap;">Formulação usada no cálculo:</label>
+    <select id="crono-formula-sel" style="flex:1;min-width:200px;font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);" onchange="onCronoFormulaChange()">
+      <option value="__atual__">← Formulação atual</option>
+    </select>
+    <span style="font-size:13px;color:var(--text3);">Custo/kg: <strong id="crono-ckg-label" style="color:var(--green);">—</strong></span>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Períodos de consumo</span>
+      <button class="btn" onclick="addPeriod()">+ Período</button>
+    </div>
+    <table>
+      <colgroup><col style="width:14%"><col style="width:14%"><col style="width:10%"><col style="width:12%"><col style="width:12%"><col style="width:12%"><col style="width:6%"><col style="width:14%"><col style="width:4%"></colgroup>
+      <thead><tr>
+        <th style="text-align:left;">Início</th><th style="text-align:left;">Fim</th>
+        <th>Animais</th><th>kg/animal/dia</th>
+        <th>Custo/dia</th><th>Custo/mês</th><th>Dias</th><th style="text-align:left;">Notas</th><th></th>
+      </tr></thead>
+      <tbody id="period-body"></tbody>
+    </table>
+  </div>
+  <div class="sec">Totais</div>
+  <div class="metrics g4">
+    <div class="metric"><div class="metric-label">Total dias</div><div class="metric-value" id="cr-dias">—</div></div>
+    <div class="metric"><div class="metric-label">Total ração (kg)</div><div class="metric-value" id="cr-racao">—</div></div>
+    <div class="metric"><div class="metric-label">Custo médio/dia</div><div class="metric-value" id="cr-mediadia">—</div></div>
+    <div class="metric accent"><div class="metric-label">Custo total</div><div class="metric-value" id="cr-custo">—</div></div>
+  </div>
+</div>
+
+<!-- ══ GASTOS ══ -->
+<div class="page" id="tab-gastos">
+
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:12px;padding:14px 18px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+    <label style="font-size:14px;font-weight:600;white-space:nowrap;">Formulação usada no cálculo:</label>
+    <select id="gastos-formula-sel" style="flex:1;min-width:200px;font-size:14px;padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);" onchange="onGastosFormulaChange()">
+      <option value="__atual__">← Formulação atual</option>
+    </select>
+    <span style="font-size:13px;color:var(--text3);">Custo/kg: <strong id="gastos-ckg-label" style="color:var(--green);">—</strong></span>
+  </div>
+
+  <div class="summary-strip">
+    <div><div class="strip-label">Custo/kg ração</div><div class="strip-value" id="g-ckg">—</div></div>
+    <div><div class="strip-label">Total dias</div><div class="strip-value" id="g-dias">—</div></div>
+    <div><div class="strip-label">Total ração (kg)</div><div class="strip-value" id="g-racao">—</div></div>
+    <div><div class="strip-label">Custo total</div><div class="strip-value" id="g-total">—</div></div>
+  </div>
+  <div class="sec">Por período</div>
+  <div id="period-cards"><p style="color:var(--text3);font-size:13px;padding:16px 0;">Preencha as datas na aba Cronograma.</p></div>
+  <div id="detail-wrap" style="display:none;">
+    <div class="sec">Tabela resumo</div>
+    <div class="card">
+      <table>
+        <colgroup><col style="width:8%"><col style="width:20%"><col style="width:7%"><col style="width:9%"><col style="width:11%"><col style="width:11%"><col style="width:11%"><col style="width:12%"><col style="width:11%"></colgroup>
+        <thead><tr>
+          <th>Per.</th><th style="text-align:left;">Datas</th><th>Dias</th><th>Animais</th>
+          <th>kg/dia</th><th>Custo/dia</th><th>Custo/sem</th><th>Custo/mês</th><th>Total</th>
+        </tr></thead>
+        <tbody id="detail-body"></tbody>
+        <tfoot><tr>
+          <td colspan="2">Total</td>
+          <td id="fd-dias">—</td><td>—</td>
+          <td id="fd-kg">—</td><td id="fd-dia">—</td><td>—</td><td>—</td>
+          <td id="fd-custo">—</td>
+        </tr></tfoot>
+      </table>
+      <div style="padding:6px 12px;font-size:11px;color:var(--text3);">* Custo/mês = custo/dia × 30</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ COMPARADOR ══ -->
+<div class="page" id="tab-comparador">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Compare duas formulações. Carregue a atual, escolha uma marca cadastrada, ou monte manualmente. A mais barata é destacada.</p>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
+    <div style="flex:1;min-width:200px;">
+      <label style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:5px;">Formulação A — carregar de</label>
+      <div style="display:flex;gap:6px;">
+        <select id="comp-a-source" style="flex:1;font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);">
+          <option value="">— escolha uma fonte —</option>
+          <option value="__current__">← Formulação atual</option>
+        </select>
+        <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="loadSourceToComp('a')">Carregar</button>
+      </div>
+    </div>
+    <div style="flex:1;min-width:200px;">
+      <label style="font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--text3);display:block;margin-bottom:5px;">Formulação B — carregar de</label>
+      <div style="display:flex;gap:6px;">
+        <select id="comp-b-source" style="flex:1;font-size:12px;padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--bg);">
+          <option value="">— escolha uma fonte —</option>
+          <option value="__current__">← Formulação atual</option>
+        </select>
+        <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="loadSourceToComp('b')">Carregar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="compare-grid" id="compare-grid">
+    <div class="compare-col" id="comp-a">
+      <div class="compare-col-head">
+        <input type="text" id="comp-a-name" value="Formulação A" style="background:transparent;border:none;font-size:13px;font-weight:600;color:var(--green);width:200px;padding:0;" oninput="recalcCompare()">
+      </div>
+      <div id="comp-a-ings"></div>
+      <div class="compare-total"><span>Custo/kg</span><span class="val" id="comp-a-ckg">—</span></div>
+      <div style="padding:10px 14px;border-top:1px solid var(--border);">
+        <button class="btn" style="font-size:11px;width:100%;justify-content:center;" onclick="addCompIng('a')">+ Ingrediente</button>
+      </div>
+    </div>
+    <div class="compare-col" id="comp-b">
+      <div class="compare-col-head">
+        <input type="text" id="comp-b-name" value="Formulação B" style="background:transparent;border:none;font-size:13px;font-weight:600;color:var(--green);width:200px;padding:0;" oninput="recalcCompare()">
+      </div>
+      <div id="comp-b-ings"></div>
+      <div class="compare-total"><span>Custo/kg</span><span class="val" id="comp-b-ckg">—</span></div>
+      <div style="padding:10px 14px;border-top:1px solid var(--border);">
+        <button class="btn" style="font-size:11px;width:100%;justify-content:center;" onclick="addCompIng('b')">+ Ingrediente</button>
+      </div>
+    </div>
+  </div>
+  <div id="compare-result" style="display:none;margin-top:14px;">
+    <div class="card">
+      <div class="card-header"><span class="card-title">Resultado</span></div>
+      <div style="padding:16px;font-size:14px;" id="compare-result-text"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ESTOQUE ══ -->
+<div class="page" id="tab-estoque">
+  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Controle o estoque de cada ingrediente. O sistema indica quando está baixo ou zerado.</p>
+  <div class="card">
+    <div class="card-header">
+      <span class="card-title">Estoque atual</span>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <label style="font-size:12px;color:var(--text2);">Alerta quando:</label>
+        <input type="number" id="estoque-alerta" value="50" min="0" step="1" style="width:70px;" oninput="renderEstoque()">
+        <span style="font-size:12px;color:var(--text3);">kg ou menos</span>
+      </div>
+    </div>
+    <table>
+      <colgroup><col style="width:25%"><col style="width:18%"><col style="width:15%"><col style="width:15%"><col style="width:12%"><col style="width:15%"></colgroup>
+      <thead><tr>
+        <th style="text-align:left;">Ingrediente</th>
+        <th>Estoque (kg)</th><th>Consumo/dia</th><th>Dias restantes</th><th>Status</th><th>Observação</th>
+      </tr></thead>
+      <tbody id="estoque-body"></tbody>
+    </table>
+  </div>
+  <div class="sec">Resumo do estoque</div>
+  <div class="metrics g3">
+    <div class="metric"><div class="metric-label">Ingredientes em estoque</div><div class="metric-value" id="est-ok-count">—</div></div>
+    <div class="metric" style="border-color:#fcd34d;"><div class="metric-label">Estoque baixo</div><div class="metric-value" style="color:var(--amber);" id="est-low-count">—</div></div>
+    <div class="metric" style="border-color:#fca5a5;"><div class="metric-label">Sem estoque</div><div class="metric-value" style="color:var(--red);" id="est-out-count">—</div></div>
+  </div>
+</div>
+
+<!-- ══ GRÁFICOS ══ -->
+<div class="page" id="tab-graficos">
+  <div class="sec" style="margin-top:0;">Composição da ração (% por ingrediente)</div>
+  <div class="card"><div class="chart-wrap" style="height:280px;"><canvas id="chart-composicao" role="img" aria-label="Gráfico de composição da ração por ingrediente"></canvas></div></div>
+
+  <div class="sec">Custo por ingrediente (R$ no lote)</div>
+  <div class="card"><div class="chart-wrap" style="height:260px;"><canvas id="chart-custo-ing" role="img" aria-label="Gráfico de custo por ingrediente"></canvas></div></div>
+
+  <div class="sec">Custo total por período (cronograma)</div>
+  <div class="card"><div class="chart-wrap" style="height:240px;"><canvas id="chart-periodos" role="img" aria-label="Gráfico de custo por período"></canvas></div></div>
+
+  <div class="sec">Evolução de preços (histórico)</div>
+  <div class="card"><div class="chart-wrap" style="height:260px;"><canvas id="chart-precos" role="img" aria-label="Gráfico de evolução de preços"></canvas></div></div>
+</div>
+
+<!-- ══ ESPÉCIES ══ -->
+<div class="page" id="tab-especies">
+
+  <div class="sec" style="margin-top:0;">Selecione a espécie</div>
+  <div id="especies-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px;margin-bottom:24px;"></div>
+
+  <div id="especie-content" style="display:none;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span id="especie-icon-title" style="font-size:28px;"></span>
+        <div>
+          <div id="especie-nome-title" style="font-size:18px;font-weight:700;color:var(--green);"></div>
+          <div id="especie-subtitulo" style="font-size:12px;color:var(--text3);"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parâmetros nutricionais -->
+    <div class="sec">Parâmetros nutricionais de referência</div>
+    <div id="especie-params"></div>
+
+    <!-- Fórmulas recomendadas -->
+    <div class="sec">Fórmulas recomendadas por fase</div>
+    <div id="especie-formulas"></div>
+
+    <!-- Botão aplicar -->
+    <div id="especie-apply-area" style="display:none;margin-top:8px;">
+      <div class="card" style="padding:16px;">
+        <div style="font-size:13px;font-weight:600;color:var(--text2);margin-bottom:10px;">Aplicar fórmula na calculadora</div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <select id="especie-formula-sel" style="flex:1;min-width:180px;font-size:14px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:var(--bg);"></select>
+          <button class="btn btn-green" onclick="aplicarFormulaEspecie()" style="font-size:13px;white-space:nowrap;">✓ Aplicar na formulação</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ingredientes típicos -->
+    <div class="sec">Ingredientes típicos para esta espécie</div>
+    <div id="especie-ingredientes"></div>
+  </div>
+</div>
+
+<!-- ══ INFORMAÇÕES ══ -->
+<div class="page" id="tab-informacoes">
+  <div class="info-section">
+    <div class="info-section-head">Identificação da Propriedade</div>
+    <div class="info-section-body">
+      <div class="info-grid g3">
+        <div class="info-field"><label>Nome da propriedade</label><input type="text" id="info-prop" placeholder="Ex: Sítio São João"></div>
+        <div class="info-field"><label>Proprietário</label><input type="text" id="info-owner" placeholder="Nome completo"></div>
+        <div class="info-field"><label>Data início do lote</label><input type="date" id="info-date"></div>
+      </div>
+      <hr class="info-divider">
+      <div class="info-grid g3">
+        <div class="info-field"><label>Município / Estado</label><input type="text" id="info-city" placeholder="Ex: Joaíma – MG"></div>
+        <div class="info-field"><label>Telefone</label><input type="text" id="info-phone" placeholder="(00) 00000-0000"></div>
+        <div class="info-field"><label>E-mail</label><input type="text" id="info-email" placeholder="contato@email.com"></div>
+      </div>
+    </div>
+  </div>
+  <div class="info-section">
+    <div class="info-section-head">Dados do Rebanho</div>
+    <div class="info-section-body">
+      <div class="info-grid g3">
+        <div class="info-field"><label>Espécie / Raça</label><input type="text" id="info-raca" placeholder="Ex: Suíno – AGPIC 22"></div>
+        <div class="info-field"><label>Fase de criação</label>
+          <select id="info-fase"><option value="">Selecione...</option><option>Leitão (até 30 kg)</option><option>Crescimento (30–70 kg)</option><option>Terminação (70–110 kg)</option><option>Gestação</option><option>Lactação</option><option>Reprodutor</option><option>Outro</option></select>
+        </div>
+        <div class="info-field"><label>Objetivo do lote</label>
+          <select id="info-obj"><option value="">Selecione...</option><option>Abate</option><option>Reprodução</option><option>Subsistência</option><option>Venda de leitões</option><option>Outro</option></select>
+        </div>
+      </div>
+      <hr class="info-divider">
+      <div class="info-grid g3">
+        <div class="info-field"><label>Nº total de animais</label><input type="number" id="info-nanim" placeholder="Ex: 50" min="0"></div>
+        <div class="info-field"><label>Peso médio inicial (kg)</label><input type="number" id="info-pini" placeholder="Ex: 25" min="0" step="0.1"></div>
+        <div class="info-field"><label>Peso médio final esperado (kg)</label><input type="number" id="info-pfin" placeholder="Ex: 110" min="0" step="0.1"></div>
+      </div>
+      <div class="info-grid g3" style="margin-top:14px;">
+        <div class="info-field"><label>Ganho de peso diário esperado (g)</label><input type="number" id="info-gpd" placeholder="Ex: 750" min="0"></div>
+        <div class="info-field"><label>Conversão alimentar esperada</label><input type="number" id="info-ca" placeholder="Ex: 2.8" min="0" step="0.01"></div>
+        <div class="info-field"><label>Consumo médio/animal/dia (kg)</label><input type="number" id="info-cons" placeholder="Ex: 2.5" min="0" step="0.1"></div>
+      </div>
+    </div>
+  </div>
+  <div class="info-section">
+    <div class="info-section-head">Fornecedores</div>
+    <div style="overflow:hidden;"><table>
+      <thead><tr><th>Ingrediente</th><th style="text-align:left;">Fornecedor</th><th style="text-align:left;">Contato</th><th>Preço (R$/kg)</th></tr></thead>
+      <tbody id="fornec-body"></tbody>
+    </table></div>
+  </div>
+  <div class="info-section">
+    <div class="info-section-head">Observações</div>
+    <div class="info-section-body">
+      <div class="info-grid g2">
+        <div class="info-field"><label>Veterinário responsável</label><input type="text" id="info-vet" placeholder="Nome e CRMV"></div>
+        <div class="info-field"><label>Próxima vacinação / manejo</label><input type="date" id="info-vacina"></div>
+      </div>
+      <div class="info-field" style="margin-top:14px;"><label>Notas gerais</label>
+        <textarea id="info-notas" placeholder="Anote vacinações, ocorrências, manejo..."></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="info-section">
+    <div class="info-section-head">Resumo automático</div>
+    <div class="info-section-body">
+      <div class="metrics g4">
+        <div class="metric accent"><div class="metric-label">Custo/kg ração</div><div class="metric-value" id="info-ckg">—</div></div>
+        <div class="metric"><div class="metric-label">Ingredientes</div><div class="metric-value" id="info-ning">—</div></div>
+        <div class="metric"><div class="metric-label">Total dias</div><div class="metric-value" id="info-dias">—</div></div>
+        <div class="metric accent"><div class="metric-label">Custo total</div><div class="metric-value" id="info-total">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════════════════════════════════════════
+// FIREBASE — Realtime Database (com fallback automático para localStorage)
+// ══════════════════════════════════════════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyAGVHqRx6kbEATaPx3OjJrBZr4rdGEuHU8",
+  authDomain: "racoes-43e61.firebaseapp.com",
+  databaseURL: "https://racoes-43e61-default-rtdb.firebaseio.com",
+  projectId: "racoes-43e61",
+  storageBucket: "racoes-43e61.firebasestorage.app",
+  messagingSenderId: "1056726773350",
+  appId: "1:1056726773350:web:67e2b01f280b0ff88f07a7",
+  measurementId: "G-D1ZHBSVCMS"
+};
+const FB_PATH='calculadoraRacao/dados';
+let fbDB=null, _fbOnline=false;
+try{
+  if(typeof firebase!=='undefined'){
+    if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+    fbDB=firebase.database();
+    // monitora estado da conexão
+    fbDB.ref('.info/connected').on('value',snap=>{
+      _fbOnline=!!snap.val();
+      updateConnDot();
+    });
+    console.log('✅ Firebase inicializado');
+  }
+}catch(e){console.error('❌ Erro ao iniciar Firebase:',e);}
+
+function updateConnDot(){
+  const dot=document.getElementById('conn-dot');
+  if(!dot)return;
+  if(fbDB&&_fbOnline){dot.className='conn-dot online';dot.textContent='nuvem';dot.title='Conectado ao Firebase — dados sincronizados';}
+  else{dot.className='conn-dot offline';dot.textContent='local';dot.title='Sem conexão — salvando apenas neste dispositivo';}
+}
+
+const fmt  = v=>'R$\u00a0'+v.toFixed(2).replace('.',',');
+const fmtN = (v,d=1)=>v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fmtD = s=>{if(!s)return '';const[y,m,d]=s.split('-');return`${d}/${m}/${y}`;};
+const DB_KEY='racao_v5';
+let ingCount=0,periodCount=0,ings=[],precosHistory=[],estoqueData={};
+const presets={matsuda:{name:'Matsuda',phases:[]},tortuga:{name:'Tortuga',phases:[]},vacinar:{name:'Vacinar',phases:[]},agroceres:{name:'Agroceres',phases:[]}};
+let _presetsInitialized = false; // track if loaded from DB
+
+// ── NAVEGAÇÃO (desktop tabs + bottom nav mobile) ─────────────────────────────
+function showTab(name,el){
+  const page=document.getElementById('tab-'+name);
+  if(!page)return;
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  page.classList.add('active');
+  // marca a tab desktop (clicada ou correspondente)
+  const tab=el||Array.from(document.querySelectorAll('.tab')).find(t=>(t.getAttribute('onclick')||'').includes("'"+name+"'"));
+  if(tab)tab.classList.add('active');
+  // marca o item do bottom nav mobile correspondente
+  document.querySelectorAll('.bottom-nav-item').forEach(b=>b.classList.remove('active'));
+  const navBtn=document.getElementById('nav-'+name);
+  if(navBtn)navBtn.classList.add('active');
+  else{const more=document.getElementById('nav-more');if(more)more.classList.add('active');}
+  // renderizações por aba
+  if(name==='especies'){renderEspeciesGrid();}
+  if(name==='biblioteca'){renderBiblio();renderHistorico();}
+  if(name==='cronograma'){renderCronoFormulaSelect();recalcPeriods();}
+  if(name==='gastos'){renderGastosFormulaSelect();recalcPeriods();}
+  if(name==='informacoes')updateFornecedores();
+  if(name==='graficos')renderCharts();
+  if(name==='estoque')renderEstoque();
+  if(name==='comparador'){recalcCompare();renderCompSourceSelects();}
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function navTo(name){ showTab(name); }
+function toggleMoreDrawer(){
+  const d=document.getElementById('more-drawer'),o=document.getElementById('drawer-overlay');
+  const open=!d.classList.contains('open');
+  d.classList.toggle('open',open);o.classList.toggle('open',open);
+}
+function closeMoreDrawer(){
+  document.getElementById('more-drawer').classList.remove('open');
+  document.getElementById('drawer-overlay').classList.remove('open');
+}
+
+// ── PWA: instalação + service worker ─────────────────────────────────────────
+let _deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();_deferredPrompt=e;
+  const b=document.getElementById('install-banner');if(b)b.classList.remove('hidden');
+});
+function installPWA(){
+  const b=document.getElementById('install-banner');
+  if(!_deferredPrompt){if(b)b.classList.add('hidden');return;}
+  _deferredPrompt.prompt();
+  _deferredPrompt.userChoice.finally(()=>{_deferredPrompt=null;if(b)b.classList.add('hidden');});
+}
+if('serviceWorker' in navigator && location.protocol==='https:'){
+  window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});});
+}
+
+// ── FORMULAÇÃO ───────────────────────────────────────────────────────────────
+function getLote(){return parseFloat(document.getElementById('lote-kg').value)||100;}
+function getCustoKg(){let t=0;ings.forEach(({id})=>{t+=(parseFloat(document.getElementById('pct-'+id).value)||0)/100*(parseFloat(document.getElementById('price-'+id).value)||0);});return t;}
+
+function recalcIng(){
+  const lote=getLote(),ckg=getCustoKg();let soma=0;
+  // check if formula was modified
+  setTimeout(markFormulaModified,100);
+  ings.forEach(({id})=>{
+    const pct=parseFloat(document.getElementById('pct-'+id).value)||0;
+    const price=parseFloat(document.getElementById('price-'+id).value)||0;
+    soma+=pct;
+    document.getElementById('qty-'+id).textContent=fmtN(lote*pct/100)+' kg';
+    document.getElementById('clote-'+id).textContent=fmt(lote*pct/100*price);
+    document.getElementById('ckg-'+id).textContent=fmt((pct/100)*price);
+  });
+  const warn=document.getElementById('warn-pct'),ok=document.getElementById('ok-pct');
+  document.getElementById('soma-pct').textContent=fmtN(soma,1);
+  warn.style.display=Math.abs(soma-100)>0.05?'block':'none';
+  ok.style.display=Math.abs(soma-100)<=0.05?'block':'none';
+  document.getElementById('foot-pct').textContent=fmtN(soma,1)+'%';
+  document.getElementById('foot-qty').textContent=fmtN(lote,1)+' kg';
+  document.getElementById('foot-custo-lote').textContent=fmt(ckg*lote);
+  document.getElementById('foot-ckg').textContent=fmt(ckg)+'/kg';
+  document.getElementById('sum-ckg').textContent=fmt(ckg)+'/kg';
+  document.getElementById('sum-lote').textContent=fmt(ckg*lote);
+  document.getElementById('sum-ning').textContent=ings.length;
+  document.getElementById('g-ckg').textContent=fmt(ckg)+'/kg';
+  document.getElementById('info-ckg').textContent=fmt(ckg)+'/kg';
+  document.getElementById('info-ning').textContent=ings.length;
+  recalcPeriods();
+}
+
+function isNucleoName(name){ return name.toLowerCase().includes('núcleo')||name.toLowerCase().includes('nucleo'); }
+
+function buildNameCell(id, name){
+  const nucleos=biblioteca.filter(b=>b.category==='Núcleo proteico');
+  if(isNucleoName(name) && nucleos.length>0){
+    const opts=nucleos.map(n=>`<option value="${n.name}" ${n.name===name?'selected':''}>${n.name} — R$\u00a0${n.price.toFixed(2).replace('.',',')}/kg</option>`).join('');
+    return `<select id="name-${id}" onchange="onNucleoChange(${id},this)" style="width:100%;font-size:13px;font-weight:500;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:#fff;">
+      ${opts}
+    </select>`;
+  }
+  return `<input type="text" id="name-${id}" value="${name}" placeholder="Nome" style="text-align:left;font-weight:500;">`;
+}
+
+function onNucleoChange(id, sel){
+  const name=sel.value;
+  const item=biblioteca.find(b=>b.name===name);
+  if(!item)return;
+  const priceEl=document.getElementById('price-'+id);
+  if(priceEl) priceEl.value=item.price.toFixed(2);
+  recalcIng();
+  saveDB();
+}
+
+function getNomingrediente(id){
+  const el=document.getElementById('name-'+id);
+  if(!el)return '';
+  // select uses name as value directly
+  if(el.tagName==='SELECT') return el.value||'';
+  return el.value;
+}
+
+function addIng(name='',pct=0,price=0,nota=''){
+  const id=ingCount++;ings.push({id});
+  const tr=document.createElement('tr');tr.dataset.id=id;
+  tr.innerHTML=`
+    <td><button class="btn-ghost" onclick="removeIng(${id},this)">×</button></td>
+    <td>${buildNameCell(id,name)}</td>
+    <td><input type="number" id="pct-${id}" min="0" max="100" step="0.1" value="${pct}" style="font-family:'DM Mono',monospace;font-weight:500;"></td>
+    <td class="computed" id="qty-${id}">—</td>
+    <td><input type="number" id="price-${id}" min="0" step="0.01" value="${price}" style="font-family:'DM Mono',monospace;"></td>
+    <td class="val" id="clote-${id}">—</td>
+    <td class="val" id="ckg-${id}">—</td>
+    <td><input type="text" id="nota-${id}" value="${nota}" placeholder="—" style="font-size:11px;"></td>`;
+  document.getElementById('ing-body').appendChild(tr);
+  tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',recalcIng));
+  const sel=tr.querySelector('select[id^="name-"]');
+  if(sel) sel.addEventListener('change',()=>{ recalcIng(); saveDB(); });
+  recalcIng();
+}
+function removeIng(id,btn){ings.splice(ings.findIndex(i=>i.id===id),1);btn.closest('tr').remove();recalcIng();saveDB();}
+
+// ── PRESETS ──────────────────────────────────────────────────────────────────
+function renderPresets(){
+  const bar=document.getElementById('presets-bar');
+  const addBtn=bar.querySelector('.preset-add-brand-btn');
+  bar.querySelectorAll('.preset-brand').forEach(d=>d.remove());
+  Object.entries(presets).forEach(([key,brand])=>{
+    const div=document.createElement('div');div.className='preset-brand';div.id='brand-'+key;
+    div.innerHTML=`<div class="preset-brand-header" onclick="toggleBrand('${key}')">
+        <div class="preset-brand-name">${brand.name} <span style="font-size:11px;font-weight:400;color:var(--text3);">(${brand.phases.length})</span></div>
+        <div style="display:flex;align-items:center;gap:4px;">
+          <button class="btn-ghost" onclick="event.stopPropagation();deleteBrand('${key}')" title="Excluir marca" style="font-size:12px;color:var(--red);">🗑</button>
+          <span class="preset-chevron">▼</span>
+        </div>
+      </div>
+      <div class="preset-phases" id="phases-${key}"></div>
+      <button class="btn preset-add-btn" onclick="addPresetPhase('${key}')">+ Fase</button>`;
+    bar.insertBefore(div,addBtn);
+    // build draggable phase rows
+    const phasesEl=div.querySelector('.preset-phases');
+    brand.phases.forEach((p,i)=>{
+      const row=document.createElement('div');
+      row.className='preset-phase';
+      row.draggable=true;
+      row.dataset.key=key;
+      row.dataset.idx=i;
+      row.innerHTML=`
+        <span class="drag-handle" title="Arrastar para reordenar">⠿</span>
+        <button class="preset-phase-btn" onclick="applyPreset('${key}',${i})" title="Aplicar">${p.name||'Fase '+(i+1)}</button>
+        <button class="btn-ghost" onclick="editPreset('${key}',${i})" style="font-size:12px;">✎</button>
+        <button class="btn-ghost" onclick="deletePresetPhase('${key}',${i})">×</button>`;
+      // ── drag events ──
+      row.addEventListener('dragstart', e=>{
+        e.dataTransfer.effectAllowed='move';
+        e.dataTransfer.setData('text/plain', JSON.stringify({key,idx:i}));
+        row.classList.add('dragging');
+      });
+      row.addEventListener('dragend', ()=>row.classList.remove('dragging'));
+      row.addEventListener('dragover', e=>{
+        e.preventDefault();e.dataTransfer.dropEffect='move';
+        row.classList.add('drag-over');
+      });
+      row.addEventListener('dragleave', ()=>row.classList.remove('drag-over'));
+      row.addEventListener('drop', e=>{
+        e.preventDefault();row.classList.remove('drag-over');
+        const {key:fromKey,idx:fromIdx}=JSON.parse(e.dataTransfer.getData('text/plain'));
+        const toIdx=parseInt(row.dataset.idx);
+        if(fromKey!==key||fromIdx===toIdx)return;
+        const moved=presets[key].phases.splice(fromIdx,1)[0];
+        presets[key].phases.splice(toIdx,0,moved);
+        renderPresets();saveDB();
+      });
+      // ── touch drag (mobile) ──
+      addTouchDrag(row, key, i);
+      phasesEl.appendChild(row);
+    });
+  });
+  renderCompSourceSelects();
+  renderGastosFormulaSelect();
+  renderCronoFormulaSelect();
+}
+
+function toggleBrand(key){
+  const div=document.getElementById('brand-'+key);
+  if(!div)return;
+  const wasOpen=div.classList.contains('open');
+  // close all
+  document.querySelectorAll('.preset-brand').forEach(d=>d.classList.remove('open'));
+  // open clicked if it was closed
+  if(!wasOpen) div.classList.add('open');
+}
+
+function addPresetPhase(key){
+  const phase={name:'Nova fase',ingredients:[]};
+  presets[key].phases.push(phase);
+  openPresetModal(key,presets[key].phases.length-1);
+  renderPresets();
+  // keep brand open after adding phase
+  const bd=document.getElementById('brand-'+key);if(bd)bd.classList.add('open');
+}
+function deletePresetPhase(key,idx){presets[key].phases.splice(idx,1);renderPresets();const bd=document.getElementById('brand-'+key);if(bd&&presets[key].phases.length>0)bd.classList.add('open');}
+function applyPreset(key,idx){
+  const phase=presets[key].phases[idx];if(!phase)return;
+  document.getElementById('ing-body').innerHTML='';ingCount=0;ings.length=0;
+  phase.ingredients.forEach(ing=>{
+    // always use current price from biblioteca if ingredient exists there
+    const biblioItem=biblioteca.find(b=>b.name===ing.name);
+    const price=biblioItem?biblioItem.price:ing.price;
+    addIng(ing.name,ing.pct,price);
+    // also update saved price in preset to keep in sync
+    ing.price=price;
+  });
+  saveDB();
+  showToast('✓ Fórmula "'+phase.name+'" aplicada!','ok');
+}
+
+// ── MODAL DE EDIÇÃO DE FÓRMULA ──────────────────────────────────────────────
+// modalRows: array de {name, pct, price} em memória — fonte única da verdade
+let modalRows=[], modalKey='', modalIdx=0;
+
+function openPresetModal(key,idx){
+  modalKey=key; modalIdx=idx;
+  const phase=presets[key].phases[idx];
+  // inicializa com ingredientes da fase ou com os da formulação atual
+  if(phase.ingredients && phase.ingredients.length>0){
+    modalRows=phase.ingredients.map(i=>({name:i.name,pct:i.pct,price:parseFloat(i.price)||0}));
+  } else {
+    modalRows=ings.map(({id})=>({
+      name:getNomingrediente(id)||'',
+      pct:0,
+      price:parseFloat(document.getElementById('price-'+id).value)||0
+    }));
+  }
+  renderModalOverlay(key,idx,phase.name||'Nova fase');
+}
+// keep old name working
+function editPreset(key,idx){ openPresetModal(key,idx); }
+
+function renderModalOverlay(key,idx,phaseName){
+  document.querySelectorAll('.overlay').forEach(o=>o.remove());
+  const nucleos=biblioteca.filter(b=>b.category==='Núcleo proteico');
+  const allItems=biblioteca;
+
+  const overlay=document.createElement('div');overlay.className='overlay';
+  overlay.innerHTML=`<div class="modal" style="width:620px;max-height:85vh;overflow-y:auto;">
+    <h3 style="margin-bottom:16px;">${presets[key].name} —
+      <input id="mpname" value="${phaseName}" style="border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:15px;font-weight:700;color:var(--green);font-family:'DM Sans',sans-serif;width:210px;">
+    </h3>
+
+    <div style="background:var(--green3);border-radius:8px;padding:10px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+      <span style="font-size:13px;font-weight:600;color:var(--green);">+ Adicionar da biblioteca:</span>
+      <select id="m-add-sel" style="flex:1;min-width:180px;font-size:13px;">
+        <option value="">— selecione —</option>
+        ${allItems.map(i=>`<option value="${i.id}">[${i.category}] ${i.name} — R$\u00a0${i.price.toFixed(2).replace('.',',')}/kg</option>`).join('')}
+      </select>
+      <button class="btn btn-green" style="font-size:12px;padding:5px 12px;" onclick="modalAddFromBiblio()">+ Adicionar</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 75px 95px 30px;gap:6px;padding:0 4px;margin-bottom:6px;">
+      <div class="col-lbl">Ingrediente</div>
+      <div class="col-lbl" style="text-align:right;">% na ração</div>
+      <div class="col-lbl" style="text-align:right;">Preço/kg (R$)</div>
+      <div></div>
+    </div>
+    <div id="modal-rows-container"></div>
+
+    <button class="btn" style="margin-top:10px;font-size:12px;" onclick="modalAddBlankRow()">+ Linha em branco</button>
+    <div id="modal-soma" style="font-size:13px;font-weight:600;margin-top:8px;"></div>
+    <div class="modal-footer">
+      <button class="btn" onclick="document.querySelectorAll('.overlay').forEach(o=>o.remove())">Cancelar</button>
+      <button class="btn btn-green" onclick="modalSave()">💾 Salvar fórmula</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+  renderModalRows();
+}
+
+function renderModalRows(){
+  const container=document.getElementById('modal-rows-container');
+  if(!container)return;
+  const nucleos=biblioteca.filter(b=>b.category==='Núcleo proteico');
+  container.innerHTML='';
+  modalRows.forEach((row,i)=>{
+    const isNucleo=nucleos.some(n=>n.name===row.name)||row.name.toLowerCase().includes('núcleo');
+    const div=document.createElement('div');
+    div.style.cssText='display:grid;grid-template-columns:1fr 75px 95px 30px;gap:6px;margin-bottom:6px;align-items:center;';
+    div.dataset.rowidx=i;
+
+    if(isNucleo&&nucleos.length>0){
+      const selEl=document.createElement('select');
+      selEl.className='m-name-sel';
+      selEl.style.cssText='font-size:13px;font-weight:500;padding:5px 7px;border:1px solid var(--border);border-radius:6px;background:#fff;';
+      const hasMatch=nucleos.some(n=>n.name===row.name);
+      selEl.innerHTML=nucleos.map(n=>`<option value="${n.id}" ${n.name===row.name?'selected':(!hasMatch&&n===nucleos[0]?'selected':'')}>${n.name}</option>`).join('');
+      selEl.addEventListener('change',()=>{
+        const item=biblioteca.find(b=>b.id===parseInt(selEl.value));
+        if(item){
+          const priceInput=div.querySelector('.m-price');
+          if(priceInput)priceInput.value=item.price.toFixed(2);
+        }
+      });
+      div.appendChild(selEl);
+      // sync price for pre-selected item on render
+      setTimeout(()=>{
+        const item=biblioteca.find(b=>b.id===parseInt(selEl.value));
+        if(item){ const pi=div.querySelector('.m-price'); if(pi&&parseFloat(pi.value)===0)pi.value=item.price.toFixed(2); }
+      },0);
+    } else {
+      const nameInput=document.createElement('input');
+      nameInput.type='text';nameInput.className='m-name-txt';nameInput.value=row.name;nameInput.placeholder='Ingrediente';
+      nameInput.style.cssText='font-weight:500;';
+      div.appendChild(nameInput);
+    }
+
+    const pctInput=document.createElement('input');
+    pctInput.type='number';pctInput.min='0';pctInput.max='100';pctInput.step='0.1';pctInput.className='m-pct';
+    pctInput.value=row.pct;pctInput.style.cssText='text-align:right;font-family:"DM Mono",monospace;font-weight:600;';
+    pctInput.addEventListener('input',updateModalSoma);
+    div.appendChild(pctInput);
+
+    const priceInput=document.createElement('input');
+    priceInput.type='number';priceInput.min='0';priceInput.step='0.01';priceInput.className='m-price';
+    priceInput.value=row.price.toFixed(2);priceInput.style.cssText='text-align:right;font-family:"DM Mono",monospace;color:var(--green);font-weight:600;';
+    div.appendChild(priceInput);
+
+    const delBtn=document.createElement('button');
+    delBtn.className='btn-ghost';delBtn.textContent='×';
+    delBtn.addEventListener('click',()=>{
+      const idx=parseInt(div.dataset.rowidx);
+      modalRows.splice(idx,1);
+      renderModalRows();
+    });
+    div.appendChild(delBtn);
+
+    container.appendChild(div);
+  });
+  updateModalSoma();
+}
+
+function updateModalSoma(){
+  const el=document.getElementById('modal-soma');if(!el)return;
+  let soma=0;
+  document.querySelectorAll('#modal-rows-container .m-pct').forEach(inp=>soma+=parseFloat(inp.value)||0);
+  el.textContent='Soma: '+soma.toFixed(1)+'%';
+  el.style.color=Math.abs(soma-100)<=0.05?'var(--green)':'var(--amber)';
+}
+
+function modalAddFromBiblio(){
+  const sel=document.getElementById('m-add-sel');
+  const id=parseInt(sel.value);if(!id)return;
+  const item=biblioteca.find(i=>i.id===id);if(!item)return;
+  modalRows.push({name:item.name,pct:0,price:item.price});
+  renderModalRows();sel.value='';
+}
+
+function modalAddBlankRow(){
+  modalRows.push({name:'',pct:0,price:0});
+  renderModalRows();
+}
+
+function modalSave(){
+  // read directly from DOM — don't rely on modalRows being up to date
+  const saved=[];
+  document.querySelectorAll('#modal-rows-container [data-rowidx]').forEach(div=>{
+    const selEl=div.querySelector('.m-name-sel');
+    const txtEl=div.querySelector('.m-name-txt');
+    const pctEl=div.querySelector('.m-pct');
+    const priceEl=div.querySelector('.m-price');
+    let name='';
+    if(selEl){
+      // get name AND price from selected nucleus item
+      const item=biblioteca.find(b=>b.id===parseInt(selEl.value));
+      name=item?item.name:(selEl.options[selEl.selectedIndex]?.text||'');
+      // override price with biblioteca price for accuracy
+      if(item&&priceEl) priceEl.value=item.price.toFixed(2);
+    } else if(txtEl){
+      name=txtEl.value.trim();
+    }
+    const pct=parseFloat(pctEl?.value)||0;
+    const price=parseFloat(priceEl?.value)||0;
+    if(name) saved.push({name,pct,price});
+  });
+  const nameEl=document.getElementById('mpname');
+  presets[modalKey].phases[modalIdx]={
+    name:nameEl?nameEl.value.trim()||'Fase '+(modalIdx+1):'Fase '+(modalIdx+1),
+    ingredients:saved
+  };
+  document.querySelectorAll('.overlay').forEach(o=>o.remove());
+  renderPresets();renderCompSourceSelects();saveDB();
+  showToast('✓ Fórmula salva — '+saved.length+' ingredientes!','ok');
+}
+
+// ── compat stubs ──
+function addMRow(){ modalAddBlankRow(); }
+function savePreset(key,idx,btn){ modalSave(); }
+function addPresetBrand(){
+  const name=prompt('Nome da marca:');if(!name||!name.trim())return;
+  const key=name.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'')+'_'+Date.now();
+  presets[key]={name:name.trim(),phases:[]};renderPresets();saveDB();
+}
+function deleteBrand(key){
+  if(!confirm('Excluir a marca "'+presets[key].name+'" e todas as suas fases?'))return;
+  delete presets[key];renderPresets();saveDB();showToast('✓ Marca excluída.','ok');
+}
+
+// ── CRONOGRAMA ───────────────────────────────────────────────────────────────
+function dateDiff(a,b){return Math.round((new Date(b)-new Date(a))/86400000);}
+
+function renderCronoFormulaSelect(){
+  const sel=document.getElementById('crono-formula-sel');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="__atual__">← Formulação atual</option>';
+  Object.entries(presets).forEach(([key,brand])=>{
+    if(!brand.phases.length)return;
+    const grp=document.createElement('optgroup');
+    grp.label=brand.name;
+    brand.phases.forEach((phase,i)=>{
+      const opt=document.createElement('option');
+      opt.value=key+'::'+i;
+      const ckg=phase.ingredients.reduce((s,ing)=>s+(ing.pct/100)*ing.price,0);
+      opt.textContent=(phase.name||'Fase '+(i+1))+' — R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+  if(cur)sel.value=cur;
+  updateCronoCkgLabel();
+}
+
+function getCronoCustoKg(){
+  const c=phaseCustoKg(document.getElementById('crono-formula-sel')?.value);
+  return c!==null?c:getCustoKg();
+}
+
+function updateCronoCkgLabel(){
+  const ckg=getCronoCustoKg();
+  const lbl=document.getElementById('crono-ckg-label');
+  if(lbl)lbl.textContent='R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+}
+
+function phaseCustoKg(val){
+  // val = "chave::idx" → custo/kg da fase; senão null
+  if(!val||val==='__atual__')return null;
+  const [key,idxStr]=val.split('::');
+  const phase=presets[key]&&presets[key].phases[parseInt(idxStr)];
+  return phase?phase.ingredients.reduce((s,ing)=>s+(ing.pct/100)*ing.price,0):null;
+}
+function getActiveCustoKg(){
+  // os dois seletores (cronograma/gastos) ficam sincronizados; usa o que estiver selecionado
+  const c=phaseCustoKg(document.getElementById('crono-formula-sel')?.value);
+  if(c!==null)return c;
+  const g=phaseCustoKg(document.getElementById('gastos-formula-sel')?.value);
+  if(g!==null)return g;
+  return getCustoKg();
+}
+
+function onCronoFormulaChange(){
+  // sync gastos selector to same value
+  const sel=document.getElementById('crono-formula-sel');
+  const gSel=document.getElementById('gastos-formula-sel');
+  if(sel&&gSel)gSel.value=sel.value;
+  updateCronoCkgLabel();updateGastosCkgLabel();
+  recalcPeriods();
+}
+
+function onGastosFormulaChange(){
+  // sync crono selector to same value
+  const sel=document.getElementById('gastos-formula-sel');
+  const cSel=document.getElementById('crono-formula-sel');
+  if(sel&&cSel)cSel.value=sel.value;
+  updateCronoCkgLabel();updateGastosCkgLabel();
+  recalcPeriods();
+}
+
+// ── GASTOS FORMULA SELECTOR ───────────────────────────────────────────────────
+function renderGastosFormulaSelect(){
+  const sel=document.getElementById('gastos-formula-sel');
+  if(!sel)return;
+  const cur=sel.value;
+  sel.innerHTML='<option value="__atual__">← Formulação atual</option>';
+  Object.entries(presets).forEach(([key,brand])=>{
+    if(!brand.phases.length)return;
+    const grp=document.createElement('optgroup');
+    grp.label=brand.name;
+    brand.phases.forEach((phase,i)=>{
+      const opt=document.createElement('option');
+      opt.value=key+'::'+i;
+      const ckg=phase.ingredients.reduce((s,ing)=>s+(ing.pct/100)*ing.price,0);
+      opt.textContent=(phase.name||'Fase '+(i+1))+' — R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+  if(cur)sel.value=cur;
+  updateGastosCkgLabel();
+}
+
+function updateGastosCkgLabel(){
+  const ckg=getActiveCustoKg();
+  const lbl=document.getElementById('gastos-ckg-label');
+  if(lbl)lbl.textContent='R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+}
+
+function recalcPeriods(){
+  const ckg=getActiveCustoKg();let tD=0,tR=0,tC=0;const detail=[];
+  document.querySelectorAll('.period-row').forEach((row,i)=>{
+    const pid=row.dataset.pid;
+    const di=document.getElementById('di-'+pid).value;
+    const df=document.getElementById('df-'+pid).value;
+    const ani=parseFloat(document.getElementById('ani-'+pid).value)||0;
+    const cons=parseFloat(document.getElementById('cons-'+pid).value)||0;
+    const dias=(di&&df&&df>di)?dateDiff(di,df):0;
+    const kgDia=ani*cons,cDia=kgDia*ckg,cMes=cDia*30,cPer=cDia*dias;
+    document.getElementById('cdia-'+pid).textContent=cDia>0?fmt(cDia):'—';
+    document.getElementById('cmes-'+pid).textContent=cMes>0?fmt(cMes):'—';
+    document.getElementById('dias-'+pid).textContent=dias>0?dias:'—';
+    tD+=dias;tR+=kgDia*dias;tC+=cPer;
+    detail.push({i:i+1,di,df,dias,ani,kgDia,cDia,cMes,cPer,v:dias>0});
+  });
+  const valid=detail.filter(d=>d.v);const media=tD>0?tC/tD:0;
+  document.getElementById('cr-dias').textContent=tD>0?tD+' dias':'—';
+  document.getElementById('cr-racao').textContent=tR>0?fmtN(tR)+' kg':'—';
+  document.getElementById('cr-mediadia').textContent=media>0?fmt(media):'—';
+  document.getElementById('cr-custo').textContent=tC>0?fmt(tC):'—';
+  document.getElementById('g-dias').textContent=tD>0?tD+' dias':'—';
+  document.getElementById('g-racao').textContent=tR>0?fmtN(tR)+' kg':'—';
+  document.getElementById('g-total').textContent=tC>0?fmt(tC):'—';
+  document.getElementById('info-dias').textContent=tD>0?tD+' dias':'—';
+  document.getElementById('info-total').textContent=tC>0?fmt(tC):'—';
+  const cardsEl=document.getElementById('period-cards');
+  if(valid.length>0){
+    cardsEl.innerHTML=valid.map(d=>`<div class="period-card">
+      <div class="period-card-head">
+        <span class="period-card-name">Período ${d.i}</span>
+        <span class="period-card-meta">${fmtD(d.di)} → ${fmtD(d.df)} · ${d.dias} dias · ${d.ani} animal(is) · ${fmtN(d.kgDia)} kg/dia</span>
+      </div>
+      <div class="period-card-body">
+        <div class="period-metric"><div class="period-metric-label">Custo por dia</div><div class="period-metric-value">${fmt(d.cDia)}</div></div>
+        <div class="period-metric"><div class="period-metric-label">Custo por semana</div><div class="period-metric-value">${fmt(d.cDia*7)}</div></div>
+        <div class="period-metric"><div class="period-metric-label">Custo por mês (30d)</div><div class="period-metric-value">${fmt(d.cMes)}</div></div>
+        <div class="period-metric highlight"><div class="period-metric-label">Total do período</div><div class="period-metric-value">${fmt(d.cPer)}</div></div>
+      </div>
+    </div>`).join('');
+  } else {
+    cardsEl.innerHTML='<p style="color:var(--text3);font-size:13px;padding:16px 0;">Preencha as datas na aba Cronograma.</p>';
+  }
+  const wrap=document.getElementById('detail-wrap');
+  if(valid.length>0){
+    wrap.style.display='block';
+    document.getElementById('detail-body').innerHTML=valid.map(d=>`<tr>
+      <td style="font-weight:600;color:var(--green)">P${d.i}</td>
+      <td style="font-size:11px;color:var(--text2);">${fmtD(d.di)} → ${fmtD(d.df)}</td>
+      <td>${d.dias}</td><td>${d.ani}</td>
+      <td class="computed">${fmtN(d.kgDia)} kg</td>
+      <td class="val">${fmt(d.cDia)}</td>
+      <td class="val">${fmt(d.cDia*7)}</td>
+      <td class="val">${fmt(d.cMes)}</td>
+      <td class="val" style="font-weight:600;">${fmt(d.cPer)}</td>
+    </tr>`).join('');
+    document.getElementById('fd-dias').textContent=tD;
+    document.getElementById('fd-kg').textContent=fmtN(tR)+' kg';
+    document.getElementById('fd-dia').textContent=fmt(media);
+    document.getElementById('fd-custo').textContent=fmt(tC);
+  } else {wrap.style.display='none';}
+}
+
+function addPeriod(){
+  const pid=periodCount++;const tr=document.createElement('tr');
+  tr.className='period-row';tr.dataset.pid=pid;
+  tr.innerHTML=`
+    <td><input type="date" id="di-${pid}"></td>
+    <td><input type="date" id="df-${pid}"></td>
+    <td><input type="number" id="ani-${pid}" min="1" step="1" value="1"></td>
+    <td><input type="number" id="cons-${pid}" min="0" step="0.1" value="2.5"></td>
+    <td class="val" id="cdia-${pid}">—</td>
+    <td class="val" id="cmes-${pid}">—</td>
+    <td style="color:var(--text3);font-family:'DM Mono',monospace;font-size:12px;" id="dias-${pid}">—</td>
+    <td><input type="text" id="nota-per-${pid}" placeholder="Notas..." style="font-size:11px;"></td>
+    <td><button class="btn-ghost" onclick="this.closest('tr').remove();recalcPeriods();">×</button></td>`;
+  document.getElementById('period-body').appendChild(tr);
+  tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',recalcPeriods));
+}
+
+// ── PREÇOS ────────────────────────────────────────────────────────────────────
+function applyPrecos(){
+  ings.forEach(({id})=>{
+    const name=getNomingrediente(id);
+    const item=biblioteca.find(i=>i.name===name);
+    if(item){const f=document.getElementById('price-'+id);if(f)f.value=item.price.toFixed(2);}
+  });
+  recalcIng();showToast('✓ Preços da biblioteca aplicados na formulação!','ok');saveDB();
+}
+function addHistoricoEntry(){
+  const entry={date:new Date().toLocaleDateString('pt-BR'),prices:ings.map(({id})=>({name:getNomingrediente(id)||'—',price:parseFloat(document.getElementById('price-'+id).value)||0}))};
+  precosHistory.push(entry);renderHistorico();saveDB();showToast('✓ Preços registrados!','ok');
+}
+function renderHistorico(){
+  const tbody=document.getElementById('historico-body');if(!tbody)return;
+  if(precosHistory.length===0){
+    tbody.innerHTML='<tr><td colspan="20" style="color:var(--text3);text-align:center;padding:18px;font-size:13px;">Nenhum registro ainda.</td></tr>';
+    document.getElementById('historico-thead').innerHTML='<th style="text-align:left;">Data</th>';
+    return;
+  }
+  const latest=precosHistory[precosHistory.length-1];
+  document.getElementById('historico-thead').innerHTML='<th style="text-align:left;">Data</th>'+latest.prices.map(p=>`<th style="text-align:right;font-size:10px;">${p.name}</th>`).join('')+'<th></th>';
+  tbody.innerHTML=precosHistory.slice().reverse().map((entry,ri)=>{
+    const realIdx=precosHistory.length-1-ri;
+    return`<tr style="border-bottom:1px solid var(--border);">
+      <td style="font-weight:600;color:var(--text2);font-size:12px;">${entry.date}</td>
+      ${entry.prices.map(p=>`<td class="computed">R$\u00a0${p.price.toFixed(2).replace('.',',')}</td>`).join('')}
+      <td><button class="btn-ghost" onclick="removeHistorico(${realIdx})">×</button></td>
+    </tr>`;
+  }).join('');
+}
+function removeHistorico(idx){precosHistory.splice(idx,1);renderHistorico();saveDB();}
+
+// ── COMPARADOR ────────────────────────────────────────────────────────────────
+let compData={a:[],b:[]};
+function renderCompSourceSelects() {
+  ['a','b'].forEach(side => {
+    const sel = document.getElementById('comp-'+side+'-source');
+    if (!sel) return;
+    const current = sel.value;
+    sel.innerHTML = '<option value="">— escolha uma fonte —</option><option value="__current__">← Formulação atual</option>';
+    // add all brand phases as options
+    Object.entries(presets).forEach(([key, brand]) => {
+      if (brand.phases.length === 0) return;
+      const grp = document.createElement('optgroup');
+      grp.label = brand.name;
+      brand.phases.forEach((phase, i) => {
+        const opt = document.createElement('option');
+        opt.value = key + '::' + i;
+        opt.textContent = phase.name || 'Fase ' + (i+1);
+        grp.appendChild(opt);
+      });
+      sel.appendChild(grp);
+    });
+    if (current) sel.value = current;
+  });
+}
+
+function loadSourceToComp(side) {
+  const sel = document.getElementById('comp-'+side+'-source');
+  const val = sel.value;
+  if (!val) return;
+  if (val === '__current__') {
+    compData[side] = ings.map(({id}) => ({
+      name:  getNomingrediente(id) || '',
+      pct:   parseFloat(document.getElementById('pct-'+id).value) || 0,
+      price: parseFloat(document.getElementById('price-'+id).value) || 0,
+    }));
+    document.getElementById('comp-'+side+'-name').value = 'Formulação atual';
+  } else {
+    const [key, idxStr] = val.split('::');
+    const phase = presets[key] && presets[key].phases[parseInt(idxStr)];
+    if (!phase) return;
+    compData[side] = phase.ingredients.map(i => ({name:i.name, pct:i.pct, price:i.price}));
+    document.getElementById('comp-'+side+'-name').value = presets[key].name + ' — ' + phase.name;
+  }
+  renderCompSide(side);
+  showToast('✓ Carregado no lado ' + side.toUpperCase() + '!', 'ok');
+}
+
+function addCompIng(side){
+  compData[side].push({name:'',pct:0,price:0});renderCompSide(side);
+}
+function loadCurrentToComp(side) { loadSourceToComp(side); }
+function renderCompSide(side){
+  const container=document.getElementById('comp-'+side+'-ings');
+  container.innerHTML=compData[side].map((ing,i)=>`
+    <div class="compare-ing-row">
+      <input type="text" value="${ing.name}" placeholder="Ingrediente" style="text-align:left;" onchange="compData['${side}'][${i}].name=this.value;recalcCompare();">
+      <input type="number" value="${ing.pct}" min="0" step="0.1" placeholder="%" style="text-align:right;" onchange="compData['${side}'][${i}].pct=parseFloat(this.value)||0;recalcCompare();">
+      <input type="number" value="${ing.price}" min="0" step="0.01" placeholder="R$/kg" style="text-align:right;" onchange="compData['${side}'][${i}].price=parseFloat(this.value)||0;recalcCompare();">
+    </div>`).join('');
+  recalcCompare();
+}
+function recalcCompare(){
+  ['a','b'].forEach(side=>{
+    const ckg=compData[side].reduce((s,ing)=>s+(ing.pct/100)*ing.price,0);
+    document.getElementById('comp-'+side+'-ckg').textContent=ckg>0?fmt(ckg)+'/kg':'—';
+    document.getElementById('comp-'+side).classList.toggle('compare-winner',false);
+  });
+  const ckgA=compData.a.reduce((s,i)=>s+(i.pct/100)*i.price,0);
+  const ckgB=compData.b.reduce((s,i)=>s+(i.pct/100)*i.price,0);
+  const res=document.getElementById('compare-result');
+  if(ckgA>0&&ckgB>0){
+    res.style.display='block';
+    const diff=Math.abs(ckgA-ckgB);const winner=ckgA<ckgB?'a':'b';
+    document.getElementById('comp-'+winner).classList.add('compare-winner');
+    const nameA=document.getElementById('comp-a-name').value||'A';
+    const nameB=document.getElementById('comp-b-name').value||'B';
+    document.getElementById('compare-result-text').innerHTML=`
+      <strong>${ckgA<ckgB?nameA:nameB}</strong> é mais barata por <strong style="color:var(--green);">${fmt(diff)}/kg</strong> 
+      (${fmt(ckgA)}/kg vs ${fmt(ckgB)}/kg). 
+      Economia de <strong style="color:var(--green);">${fmt(diff*getLote())}</strong> por lote de ${getLote()} kg.`;
+  } else {res.style.display='none';}
+}
+
+// ── ESTOQUE ───────────────────────────────────────────────────────────────────
+function renderEstoque(){
+  const tbody=document.getElementById('estoque-body');if(!tbody)return;
+  const alerta=parseFloat(document.getElementById('estoque-alerta').value)||50;
+  let cntOk=0,cntLow=0,cntOut=0;
+  // total consumption per ingredient per day
+  let totalKgDia=0;
+  document.querySelectorAll('.period-row').forEach(row=>{
+    const pid=row.dataset.pid;
+    const ani=parseFloat(document.getElementById('ani-'+pid).value)||0;
+    const cons=parseFloat(document.getElementById('cons-'+pid).value)||0;
+    totalKgDia+=ani*cons;
+  });
+  tbody.innerHTML='';
+  ings.forEach(({id})=>{
+    const name=getNomingrediente(id)||'—';
+    const pct=(parseFloat(document.getElementById('pct-'+id).value)||0)/100;
+    const consoDia=totalKgDia*pct;
+    if(!estoqueData[name])estoqueData[name]={qty:0,obs:''};
+    const qty=estoqueData[name].qty;
+    const diasRest=consoDia>0?Math.floor(qty/consoDia):null;
+    let status='',cls='';
+    if(qty<=0){status='Sem estoque';cls='est-out';cntOut++;}
+    else if(qty<=alerta){status='Estoque baixo';cls='est-low';cntLow++;}
+    else{status='OK';cls='est-ok';cntOk++;}
+    const tr=document.createElement('tr');tr.style.borderBottom='1px solid var(--border)';
+    const tdName=document.createElement('td');tdName.style.fontWeight='600';tdName.textContent=name;
+    const tdQty=document.createElement('td');
+    const qtyInp=document.createElement('input');
+    qtyInp.type='number';qtyInp.min='0';qtyInp.step='0.1';qtyInp.value=qty.toFixed(1);
+    qtyInp.style.cssText='width:90px;text-align:right;font-family:"DM Mono",monospace;';
+    qtyInp.addEventListener('change',()=>{estoqueData[name].qty=parseFloat(qtyInp.value)||0;renderEstoque();saveDB();});
+    tdQty.appendChild(qtyInp);
+    const tdCons=document.createElement('td');tdCons.className='computed';tdCons.textContent=consoDia>0?fmtN(consoDia)+' kg':'—';
+    const tdDias=document.createElement('td');tdDias.className='computed';tdDias.textContent=diasRest!==null?diasRest+' dias':'—';
+    const tdStat=document.createElement('td');tdStat.innerHTML=`<span class="estoque-status ${cls}">${status}</span>`;
+    const tdObs=document.createElement('td');
+    const obsInp=document.createElement('input');
+    obsInp.type='text';obsInp.value=estoqueData[name].obs||'';obsInp.placeholder='—';obsInp.style.fontSize='11px';
+    obsInp.addEventListener('change',()=>{estoqueData[name].obs=obsInp.value;saveDB();});
+    tdObs.appendChild(obsInp);
+    tr.append(tdName,tdQty,tdCons,tdDias,tdStat,tdObs);
+    tbody.appendChild(tr);
+  });
+  document.getElementById('est-ok-count').textContent=cntOk;
+  document.getElementById('est-low-count').textContent=cntLow;
+  document.getElementById('est-out-count').textContent=cntOut;
+}
+
+// ── GRÁFICOS ─────────────────────────────────────────────────────────────────
+let charts={};
+const COLORS=['#1a6b3c','#2d8f55','#5aba7f','#9FE1CB','#c3e6d2','#b45309','#d97706','#92400e','#1d4ed8','#3b82f6'];
+
+function renderCharts(){
+  renderChartComposicao();
+  renderChartCustoIng();
+  renderChartPeriodos();
+  renderChartPrecos();
+}
+
+function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function renderChartComposicao(){
+  destroyChart('comp');
+  const labels=[],data=[];
+  ings.forEach(({id})=>{
+    const pct=parseFloat(document.getElementById('pct-'+id).value)||0;
+    if(pct>0){labels.push(getNomingrediente(id)||'?');data.push(pct);}
+  });
+  if(!labels.length)return;
+  charts['comp']=new Chart(document.getElementById('chart-composicao'),{
+    type:'doughnut',
+    data:{labels,datasets:[{data,backgroundColor:COLORS.slice(0,labels.length),borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{font:{size:11},boxWidth:12}}}}
+  });
+}
+
+function renderChartCustoIng(){
+  destroyChart('cust');
+  const labels=[],data=[];
+  const lote=getLote();
+  ings.forEach(({id})=>{
+    const pct=parseFloat(document.getElementById('pct-'+id).value)||0;
+    const price=parseFloat(document.getElementById('price-'+id).value)||0;
+    const custo=lote*(pct/100)*price;
+    if(custo>0){labels.push(getNomingrediente(id)||'?');data.push(parseFloat(custo.toFixed(2)));}
+  });
+  if(!labels.length)return;
+  charts['cust']=new Chart(document.getElementById('chart-custo-ing'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Custo no lote (R$)',data,backgroundColor:COLORS[0],borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+v.toFixed(2).replace('.',',')}}}}
+  });
+}
+
+function renderChartPeriodos(){
+  destroyChart('per');
+  const labels=[],data=[];
+  const ckg=getCustoKg();
+  document.querySelectorAll('.period-row').forEach((row,i)=>{
+    const pid=row.dataset.pid;
+    const di=document.getElementById('di-'+pid).value;
+    const df=document.getElementById('df-'+pid).value;
+    const ani=parseFloat(document.getElementById('ani-'+pid).value)||0;
+    const cons=parseFloat(document.getElementById('cons-'+pid).value)||0;
+    const dias=(di&&df&&df>di)?dateDiff(di,df):0;
+    if(dias>0){labels.push('Per.'+(i+1)+' ('+fmtD(di)+')');data.push(parseFloat((ani*cons*ckg*dias).toFixed(2)));}
+  });
+  if(!labels.length)return;
+  charts['per']=new Chart(document.getElementById('chart-periodos'),{
+    type:'bar',
+    data:{labels,datasets:[{label:'Custo total (R$)',data,backgroundColor:COLORS[1],borderRadius:6}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'R$'+v.toFixed(2).replace('.',',')}}}}
+  });
+}
+
+function renderChartPrecos(){
+  destroyChart('prec');
+  if(precosHistory.length<2)return;
+  const ingNames=[...new Set(precosHistory.flatMap(e=>e.prices.map(p=>p.name)))].slice(0,6);
+  const labels=precosHistory.map(e=>e.date);
+  const datasets=ingNames.map((name,i)=>({
+    label:name,
+    data:precosHistory.map(e=>{const p=e.prices.find(p=>p.name===name);return p?p.price:null;}),
+    borderColor:COLORS[i],backgroundColor:COLORS[i]+'33',tension:.3,fill:false,pointRadius:4
+  }));
+  charts['prec']=new Chart(document.getElementById('chart-precos'),{
+    type:'line',
+    data:{labels,datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{size:11},boxWidth:12}}},scales:{y:{ticks:{callback:v=>'R$'+v.toFixed(2).replace('.',',')}}}}
+  });
+}
+
+// ── INFORMAÇÕES ───────────────────────────────────────────────────────────────
+let fornecData={}; // {nomeIngrediente:{forn,contato}} — persiste no banco
+function updateFornecedores(){
+  const tb=document.getElementById('fornec-body');tb.innerHTML='';
+  ings.forEach(({id})=>{
+    const name=getNomingrediente(id)||'—';
+    const price=parseFloat(document.getElementById('price-'+id).value)||0;
+    if(!fornecData[name])fornecData[name]={forn:'',contato:''};
+    const tr=document.createElement('tr');
+    const tdN=document.createElement('td');tdN.style.cssText='font-weight:600;color:var(--green);';tdN.textContent=name;
+    const tdF=document.createElement('td');tdF.style.textAlign='left';
+    const fInp=document.createElement('input');fInp.type='text';fInp.placeholder='Nome do fornecedor';fInp.value=fornecData[name].forn||'';
+    fInp.addEventListener('change',()=>{fornecData[name].forn=fInp.value;saveDB();});
+    tdF.appendChild(fInp);
+    const tdC=document.createElement('td');tdC.style.textAlign='left';
+    const cInp=document.createElement('input');cInp.type='text';cInp.placeholder='Telefone / contato';cInp.value=fornecData[name].contato||'';
+    cInp.addEventListener('change',()=>{fornecData[name].contato=cInp.value;saveDB();});
+    tdC.appendChild(cInp);
+    const tdP=document.createElement('td');tdP.className='val';tdP.textContent='R$\u00a0'+price.toFixed(2).replace('.',',');
+    tr.append(tdN,tdF,tdC,tdP);
+    tb.appendChild(tr);
+  });
+}
+
+
+
+
+// ── SYNC ─────────────────────────────────────────────────────────────────────
+// Keeps preset ingredient prices in sync with biblioteca (single source of truth)
+function syncPresetPricesFromBiblio(){
+  Object.values(presets).forEach(brand=>{
+    brand.phases.forEach(phase=>{
+      phase.ingredients.forEach(ing=>{
+        const item=biblioteca.find(b=>b.name===ing.name);
+        if(item) ing.price=item.price;
+      });
+    });
+  });
+}
+
+// ── BIBLIOTECA DE INGREDIENTES ───────────────────────────────────────────────
+let biblioteca = [
+  {id:1, name:'Milho',             price:0.70, category:'Energético',    obs:''},
+  {id:2, name:'Sorgo',             price:0.00, category:'Energético',    obs:''},
+  {id:3, name:'Farelo de soja',    price:1.30, category:'Proteico',      obs:''},
+  {id:4, name:'Torta de algodão',  price:0.00, category:'Proteico',      obs:''},
+  {id:5, name:'Caroço de algodão', price:3.00, category:'Proteico',      obs:''},
+  {id:6, name:'Ureia',             price:3.00, category:'Mineral',       obs:''},
+  {id:7, name:'Sal branco',        price:1.00, category:'Mineral',       obs:''},
+  {id:8, name:'Núcleo Proteico Leitão',       price:5.60, category:'Núcleo proteico', obs:''},
+  {id:9, name:'Núcleo Proteico Crescimento',  price:5.60, category:'Núcleo proteico', obs:''},
+  {id:10,name:'Núcleo Proteico Terminação',   price:5.60, category:'Núcleo proteico', obs:''},
+  {id:11,name:'Núcleo Proteico Gestação',     price:5.60, category:'Núcleo proteico', obs:''},
+  {id:12,name:'Núcleo Proteico Lactação',     price:5.60, category:'Núcleo proteico', obs:''},
+];
+let biblioNextId = 13;
+let biblioFilter = '';
+
+const CATEGORIES = ['Energético','Proteico','Núcleo proteico','Mineral','Outro'];
+
+function renderBiblioSelect() {
+  const sel = document.getElementById('biblio-select');
+  if (!sel) return;
+  const current = sel.value;
+  sel.innerHTML = '<option value="">＋ Adicionar da biblioteca...</option>';
+  // group by category
+  const cats = {};
+  biblioteca.forEach(item => {
+    if (!cats[item.category]) cats[item.category] = [];
+    cats[item.category].push(item);
+  });
+  Object.entries(cats).forEach(([cat, items]) => {
+    const grp = document.createElement('optgroup');
+    grp.label = cat;
+    items.forEach(item => {
+      const opt = document.createElement('option');
+      opt.value = item.id;
+      opt.textContent = item.name + (item.price > 0 ? '  —  R$ ' + item.price.toFixed(2).replace('.', ',') + '/kg' : '');
+      grp.appendChild(opt);
+    });
+    sel.appendChild(grp);
+  });
+  if (current) sel.value = current;
+}
+
+function previewBiblioSelect(sel) {
+  // just keep selection, button will confirm
+}
+
+function addFromBiblioSelect() {
+  const sel = document.getElementById('biblio-select');
+  const id = parseInt(sel.value);
+  if (!id) { showToast('Selecione um ingrediente da lista.', 'err'); return; }
+  const item = biblioteca.find(i => i.id === id);
+  if (!item) return;
+  addIng(item.name, 0, item.price);
+  sel.value = '';
+  showToast('✓ "' + item.name + '" adicionado!', 'ok');
+}
+
+function renderBiblio() {
+  const tbody = document.getElementById('biblio-body');
+  if (!tbody) return;
+  const filtered = biblioFilter ? biblioteca.filter(i => i.category === biblioFilter) : biblioteca;
+  tbody.innerHTML = filtered.map(item => {
+    let lastPrice = null, lastDate = '—';
+    for (let i = precosHistory.length-1; i >= 0; i--) {
+      const e = precosHistory[i].prices.find(p => p.name === item.name);
+      if (e) { lastPrice = e.price; lastDate = precosHistory[i].date; break; }
+    }
+    const v = lastPrice !== null ? item.price - lastPrice : null;
+    const varStr = v === null ? '<span style="color:var(--text3)">—</span>'
+      : v > 0 ? `<span style="color:var(--red);">▲ R$\u00a0${v.toFixed(2).replace('.',',')}</span>`
+      : v < 0 ? `<span style="color:var(--green);">▼ R$\u00a0${Math.abs(v).toFixed(2).replace('.',',')}</span>`
+      : '<span style="color:var(--text3);">= igual</span>';
+    return `<tr style="border-bottom:1px solid var(--border);">
+      <td><button class="btn-ghost" onclick="deleteBiblioItem(${item.id})">×</button></td>
+      <td><input type="text" value="${item.name}" style="text-align:left;font-weight:500;"
+          onchange="updateBiblio(${item.id},'name',this.value)"></td>
+      <td><input type="number" min="0" step="0.01" value="${item.price.toFixed(2)}"
+          style="font-family:'DM Mono',monospace;font-weight:600;color:var(--green);"
+          oninput="updateBiblio(${item.id},'price',parseFloat(this.value)||0)"></td>
+      <td><select onchange="updateBiblio(${item.id},'category',this.value)" style="font-size:12px;">
+        ${CATEGORIES.map(c=>`<option value="${c}" ${c===item.category?'selected':''}>${c}</option>`).join('')}
+      </select></td>
+      <td style="font-size:12px;color:var(--text3);font-family:'DM Mono',monospace;">
+        ${lastPrice !== null ? 'R$\u00a0'+lastPrice.toFixed(2).replace('.',',')+'<br><span style="font-size:10px;">'+lastDate+'</span>' : '—'}
+      </td>
+      <td>${varStr}</td>
+      <td><input type="text" value="${item.obs||''}" placeholder="—" style="font-size:11px;"
+          onchange="updateBiblio(${item.id},'obs',this.value)"></td>
+      <td style="text-align:center;">
+        <button class="btn btn-green" style="font-size:11px;padding:4px 8px;" onclick="addFromBiblio(${item.id})">+ Usar</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function addBiblioItem() {
+  biblioteca.push({id:biblioNextId++, name:'Novo ingrediente', price:0.00, category:'Outro', obs:''});
+  renderBiblio(); renderBiblioSelect(); saveDB();
+}
+
+function deleteBiblioItem(id) {
+  if (!confirm('Excluir este ingrediente da biblioteca?')) return;
+  biblioteca = biblioteca.filter(i => i.id !== id);
+  renderBiblio(); renderBiblioSelect(); saveDB();
+}
+
+function updateBiblio(id, field, value) {
+  const item = biblioteca.find(i => i.id === id);
+  if (!item) return;
+  const oldName = item.name;
+  item[field] = value;
+
+  if (field === 'price') {
+    const newPrice = parseFloat(value) || 0;
+    // atualiza formulação atual
+    ings.forEach(({id: ingId}) => {
+      if (getNomingrediente(ingId) === item.name) {
+        const priceEl = document.getElementById('price-' + ingId);
+        if (priceEl) priceEl.value = newPrice.toFixed(2);
+      }
+    });
+    // atualiza todas as fórmulas das marcas
+    syncPresetPricesFromBiblio();
+    recalcIng();
+  }
+
+  if (field === 'name') {
+    // atualiza formulação atual
+    ings.forEach(({id: ingId}) => {
+      if (getNomingrediente(ingId) === oldName) {
+        const td = document.getElementById('name-'+ingId)?.closest('td');
+        if (td) td.innerHTML = buildNameCell(ingId, value);
+      }
+    });
+    // atualiza todas as fórmulas das marcas
+    Object.values(presets).forEach(brand => {
+      brand.phases.forEach(phase => {
+        phase.ingredients.forEach(ing => {
+          if (ing.name === oldName) ing.name = value;
+        });
+      });
+    });
+  }
+
+  renderBiblioSelect(); saveDB();
+}
+
+function filterBiblio(cat) {
+  biblioFilter = cat;
+  // highlight active filter button
+  document.querySelectorAll('#biblio-filter-bar .btn').forEach(btn => {
+    const matches = (cat === '' && btn.textContent === 'Todos') || btn.textContent === cat;
+    btn.style.background = matches ? 'var(--green)' : '';
+    btn.style.color      = matches ? '#fff' : '';
+    btn.style.borderColor= matches ? 'var(--green)' : '';
+  });
+  renderBiblio();
+}
+
+function addFromBiblio(id) {
+  const item = biblioteca.find(i => i.id === id);
+  if (!item) return;
+  showTab('formulacao');
+  addIng(item.name, 0, item.price);
+  showToast('✓ "'+item.name+'" adicionado na formulação!','ok');
+}
+
+
+
+// ── ESPÉCIES ──────────────────────────────────────────────────────────────────
+const ESPECIES = {
+  bovino_corte: {
+    icon:'🐄', nome:'Bovino de Corte', sub:'Nelore, Angus, Brahman...',
+    params:[
+      {fase:'Recria (180–300 kg)',  pd:'11–13%', em:'2,6–2,8 Mcal/kg', ca:'0,6–0,7%', p:'0,3%', gmd:'0,8–1,0 kg/dia'},
+      {fase:'Engorda (300–500 kg)', pd:'10–12%', em:'2,8–3,2 Mcal/kg', ca:'0,5–0,6%', p:'0,25%', gmd:'1,0–1,4 kg/dia'},
+      {fase:'Terminação (>500 kg)', pd:'9–11%',  em:'3,0–3,4 Mcal/kg', ca:'0,5%',     p:'0,22%', gmd:'1,2–1,5 kg/dia'},
+    ],
+    formulas:[
+      {nome:'Suplemento Recria', ings:[{n:'Milho',p:60},{n:'Farelo de soja',p:20},{n:'Caroço de algodão',p:10},{n:'Sal branco',p:5},{n:'Ureia',p:5}]},
+      {nome:'Confinamento Engorda', ings:[{n:'Milho',p:65},{n:'Farelo de soja',p:15},{n:'Caroço de algodão',p:12},{n:'Ureia',p:3},{n:'Sal branco',p:5}]},
+      {nome:'Terminação Intensiva', ings:[{n:'Milho',p:72},{n:'Farelo de soja',p:12},{n:'Caroço de algodão',p:8},{n:'Ureia',p:3},{n:'Sal branco',p:5}]},
+    ],
+    ingredientes:['Milho','Sorgo','Farelo de soja','Torta de algodão','Caroço de algodão','Ureia','Sal branco','Calcário calcítico','Fosfato bicálcico'],
+  },
+  bovino_leite: {
+    icon:'🥛', nome:'Bovino de Leite', sub:'Holandês, Girolando, Jersey...',
+    params:[
+      {fase:'Vacas em lactação',   pd:'16–18%', em:'2,8–3,0 Mcal/kg', ca:'0,8–1,0%', p:'0,45%', producao:'20–40 L/dia'},
+      {fase:'Vacas secas',         pd:'12–14%', em:'2,4–2,6 Mcal/kg', ca:'0,6%',     p:'0,30%', producao:'—'},
+      {fase:'Novilhas recria',      pd:'14–16%', em:'2,6–2,8 Mcal/kg', ca:'0,7%',     p:'0,35%', producao:'—'},
+      {fase:'Bezerros (0–3 meses)', pd:'20–22%', em:'3,0 Mcal/kg',     ca:'0,9%',     p:'0,50%', producao:'—'},
+    ],
+    formulas:[
+      {nome:'Lactação Alta Produção', ings:[{n:'Milho',p:55},{n:'Farelo de soja',p:25},{n:'Caroço de algodão',p:10},{n:'Sal branco',p:5},{n:'Ureia',p:2},{n:'Bicarbonato de sódio',p:3}]},
+      {nome:'Vaca Seca',             ings:[{n:'Milho',p:60},{n:'Farelo de soja',p:18},{n:'Caroço de algodão',p:12},{n:'Sal branco',p:5},{n:'Ureia',p:5}]},
+      {nome:'Bezerro Creep Feeding', ings:[{n:'Milho',p:50},{n:'Farelo de soja',p:30},{n:'Sal branco',p:5},{n:'Fosfato bicálcico',p:5}]},
+    ],
+    ingredientes:['Milho','Farelo de soja','Caroço de algodão','Polpa cítrica','Sal branco','Ureia','Bicarbonato de sódio','Fosfato bicálcico','Calcário calcítico'],
+  },
+  suino: {
+    icon:'🐷', nome:'Suíno', sub:'AGPIC, Large White, Landrace...',
+    params:[
+      {fase:'Leitão (7–30 kg)',        pd:'18–20%', em:'3,4 Mcal/kg', ca:'0,9%', p:'0,7%', lisina:'1,35%'},
+      {fase:'Crescimento (30–70 kg)',   pd:'16–18%', em:'3,3 Mcal/kg', ca:'0,8%', p:'0,6%', lisina:'1,10%'},
+      {fase:'Terminação (70–110 kg)',   pd:'14–16%', em:'3,2 Mcal/kg', ca:'0,7%', p:'0,5%', lisina:'0,85%'},
+      {fase:'Gestação',                 pd:'13–15%', em:'3,1 Mcal/kg', ca:'0,8%', p:'0,6%', lisina:'0,70%'},
+      {fase:'Lactação',                 pd:'17–19%', em:'3,3 Mcal/kg', ca:'0,9%', p:'0,7%', lisina:'1,00%'},
+    ],
+    formulas:[
+      {nome:'Leitão Inicial',    ings:[{n:'Milho',p:60},{n:'Farelo de soja',p:28},{n:'Núcleo proteico',p:10},{n:'Sal branco',p:2}]},
+      {nome:'Crescimento',       ings:[{n:'Milho',p:77.3},{n:'Farelo de soja',p:9.7},{n:'Núcleo proteico',p:10},{n:'Ureia',p:1},{n:'Sal branco',p:2}]},
+      {nome:'Terminação',        ings:[{n:'Milho',p:79},{n:'Farelo de soja',p:8},{n:'Núcleo proteico',p:10},{n:'Ureia',p:1},{n:'Sal branco',p:2}]},
+      {nome:'Gestação',          ings:[{n:'Milho',p:75},{n:'Farelo de soja',p:12},{n:'Núcleo proteico',p:10},{n:'Sal branco',p:3}]},
+    ],
+    ingredientes:['Milho','Sorgo','Farelo de soja','Núcleo proteico','Ureia','Sal branco','Caroço de algodão','Torta de algodão'],
+  },
+  caprino: {
+    icon:'🐐', nome:'Caprino / Ovino', sub:'Saanen, Bôer, Santa Inês...',
+    params:[
+      {fase:'Cria (0–30 kg)',       pd:'16–18%', em:'2,8 Mcal/kg', ca:'0,7%', p:'0,4%'},
+      {fase:'Recria (30–20 kg)',    pd:'14–16%', em:'2,6 Mcal/kg', ca:'0,6%', p:'0,35%'},
+      {fase:'Engorda',              pd:'13–15%', em:'2,7 Mcal/kg', ca:'0,6%', p:'0,3%'},
+      {fase:'Fêmea lactante',       pd:'16–18%', em:'2,8 Mcal/kg', ca:'0,7%', p:'0,4%'},
+    ],
+    formulas:[
+      {nome:'Cria e Recria',   ings:[{n:'Milho',p:55},{n:'Farelo de soja',p:25},{n:'Caroço de algodão',p:10},{n:'Sal branco',p:5},{n:'Ureia',p:5}]},
+      {nome:'Engorda',         ings:[{n:'Milho',p:62},{n:'Farelo de soja',p:18},{n:'Caroço de algodão',p:12},{n:'Ureia',p:3},{n:'Sal branco',p:5}]},
+      {nome:'Lactante',        ings:[{n:'Milho',p:52},{n:'Farelo de soja',p:28},{n:'Caroço de algodão',p:10},{n:'Sal branco',p:5},{n:'Ureia',p:5}]},
+    ],
+    ingredientes:['Milho','Sorgo','Farelo de soja','Caroço de algodão','Torta de algodão','Ureia','Sal branco','Fosfato bicálcico'],
+  },
+  aves_corte: {
+    icon:'🐔', nome:'Aves de Corte', sub:'Frango, Peru, Pato...',
+    params:[
+      {fase:'Pré-inicial (1–7 dias)',   pd:'22–24%', em:'3,0 Mcal/kg', ca:'1,0%', p:'0,50%', lisina:'1,40%'},
+      {fase:'Inicial (8–21 dias)',       pd:'21–23%', em:'3,05 Mcal/kg',ca:'0,9%', p:'0,45%', lisina:'1,25%'},
+      {fase:'Crescimento (22–35 dias)', pd:'19–21%', em:'3,15 Mcal/kg',ca:'0,85%',p:'0,40%', lisina:'1,10%'},
+      {fase:'Final (36+ dias)',          pd:'17–19%', em:'3,2 Mcal/kg', ca:'0,8%', p:'0,38%', lisina:'0,95%'},
+    ],
+    formulas:[
+      {nome:'Pré-inicial',  ings:[{n:'Milho',p:55},{n:'Farelo de soja',p:35},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+      {nome:'Inicial',      ings:[{n:'Milho',p:58},{n:'Farelo de soja',p:32},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+      {nome:'Crescimento',  ings:[{n:'Milho',p:62},{n:'Farelo de soja',p:28},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+      {nome:'Final/Abate',  ings:[{n:'Milho',p:66},{n:'Farelo de soja',p:24},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+    ],
+    ingredientes:['Milho','Sorgo','Farelo de soja','Farinha de carne','Farinha de peixe','Sal branco','Fosfato bicálcico','Calcário','DL-Metionina','L-Lisina'],
+  },
+  aves_postura: {
+    icon:'🥚', nome:'Aves de Postura', sub:'Poedeira, Codorna...',
+    params:[
+      {fase:'Recria (0–17 semanas)',    pd:'15–16%', em:'2,8 Mcal/kg', ca:'1,0%', p:'0,42%'},
+      {fase:'Postura fase 1 (<40 sem)', pd:'16–17%', em:'2,85 Mcal/kg',ca:'3,8–4,0%',p:'0,38%'},
+      {fase:'Postura fase 2 (>40 sem)', pd:'15–16%', em:'2,85 Mcal/kg',ca:'4,0–4,2%',p:'0,35%'},
+    ],
+    formulas:[
+      {nome:'Recria Poedeira', ings:[{n:'Milho',p:63},{n:'Farelo de soja',p:24},{n:'Calcário',p:7},{n:'Fosfato bicálcico',p:3},{n:'Sal branco',p:3}]},
+      {nome:'Postura Fase 1',  ings:[{n:'Milho',p:62},{n:'Farelo de soja',p:22},{n:'Calcário',p:9},{n:'Fosfato bicálcico',p:3},{n:'Sal branco',p:4}]},
+      {nome:'Postura Fase 2',  ings:[{n:'Milho',p:61},{n:'Farelo de soja',p:21},{n:'Calcário',p:11},{n:'Fosfato bicálcico',p:3},{n:'Sal branco',p:4}]},
+    ],
+    ingredientes:['Milho','Sorgo','Farelo de soja','Calcário','Fosfato bicálcico','Sal branco','DL-Metionina','L-Lisina','Farinha de ostra'],
+  },
+  peixe: {
+    icon:'🐟', nome:'Peixes', sub:'Tilápia, Tambaqui, Carpa...',
+    params:[
+      {fase:'Alevino (0–5 g)',       pd:'35–40%', em:'3,2 Mcal/kg', p:'0,8%', ca:'1,5%'},
+      {fase:'Juvenil (5–50 g)',      pd:'30–35%', em:'3,1 Mcal/kg', p:'0,7%', ca:'1,2%'},
+      {fase:'Engorda (50–300 g)',    pd:'25–28%', em:'3,0 Mcal/kg', p:'0,6%', ca:'1,0%'},
+      {fase:'Terminação (>300 g)',   pd:'22–25%', em:'2,9 Mcal/kg', p:'0,55%',ca:'0,9%'},
+    ],
+    formulas:[
+      {nome:'Ração Alevino',      ings:[{n:'Milho',p:30},{n:'Farelo de soja',p:40},{n:'Farinha de peixe',p:20},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+      {nome:'Ração Juvenil',      ings:[{n:'Milho',p:38},{n:'Farelo de soja',p:36},{n:'Farinha de peixe',p:16},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+      {nome:'Ração Engorda',      ings:[{n:'Milho',p:45},{n:'Farelo de soja',p:32},{n:'Farinha de peixe',p:13},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+    ],
+    ingredientes:['Milho','Farelo de soja','Farinha de peixe','Farinha de carne','Torta de algodão','Sal branco','Fosfato bicálcico','Calcário','DL-Metionina'],
+  },
+  coelho: {
+    icon:'🐰', nome:'Coelho', sub:'Nova Zelândia, Califórnia...',
+    params:[
+      {fase:'Engorda (35–70 dias)',   pd:'15–17%', em:'2,5 Mcal/kg', ca:'0,8%', p:'0,5%', fibra:'>14%'},
+      {fase:'Reprodutora lactante',   pd:'17–19%', em:'2,7 Mcal/kg', ca:'1,0%', p:'0,6%', fibra:'>12%'},
+      {fase:'Reprodutora gestante',   pd:'15–16%', em:'2,5 Mcal/kg', ca:'0,9%', p:'0,5%', fibra:'>14%'},
+    ],
+    formulas:[
+      {nome:'Engorda Coelho',  ings:[{n:'Milho',p:35},{n:'Farelo de soja',p:20},{n:'Feno de alfafa',p:35},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+      {nome:'Reprodutora',     ings:[{n:'Milho',p:32},{n:'Farelo de soja',p:23},{n:'Feno de alfafa',p:35},{n:'Sal branco',p:3},{n:'Fosfato bicálcico',p:4},{n:'Calcário',p:3}]},
+    ],
+    ingredientes:['Milho','Farelo de soja','Feno de alfafa','Farelo de trigo','Sal branco','Fosfato bicálcico','Calcário'],
+  },
+};
+
+let especieAtiva = null;
+
+function renderEspeciesGrid(){
+  const grid=document.getElementById('especies-grid');
+  if(!grid) return;
+  grid.innerHTML = Object.entries(ESPECIES).map(([key,e])=>`
+    <div class="especie-card ${especieAtiva===key?'active':''}" onclick="selecionarEspecie('${key}')">
+      <span class="especie-card-icon">${e.icon}</span>
+      <div class="especie-card-name">${e.nome}</div>
+    </div>`).join('');
+}
+
+function selecionarEspecie(key){
+  especieAtiva = key;
+  renderEspeciesGrid();
+  const esp = ESPECIES[key];
+  const content = document.getElementById('especie-content');
+  content.style.display = 'block';
+  document.getElementById('especie-icon-title').textContent = esp.icon;
+  document.getElementById('especie-nome-title').textContent = esp.nome;
+  document.getElementById('especie-subtitulo').textContent = esp.sub;
+
+  // ── Parâmetros nutricionais ──
+  const paramsEl = document.getElementById('especie-params');
+  const colKeys = Object.keys(esp.params[0]).filter(k=>k!=='fase');
+  const colLabels = {pd:'Proteína digestível',em:'Energia metabolizável',ca:'Cálcio',p:'Fósforo',lisina:'Lisina',fibra:'Fibra bruta',gmd:'Ganho médio diário',producao:'Produção estimada'};
+  paramsEl.innerHTML = `<div class="card"><table class="param-table">
+    <thead><tr>
+      <th>Fase</th>
+      ${colKeys.map(k=>`<th>${colLabels[k]||k}</th>`).join('')}
+    </tr></thead>
+    <tbody>${esp.params.map(p=>`<tr>
+      <td>${p.fase}</td>
+      ${colKeys.map(k=>`<td>${p[k]||'—'}</td>`).join('')}
+    </tr>`).join('')}</tbody>
+  </table></div>`;
+
+  // ── Fórmulas recomendadas ──
+  const formulasEl = document.getElementById('especie-formulas');
+  const applyArea = document.getElementById('especie-apply-area');
+  const formulaSel = document.getElementById('especie-formula-sel');
+  formulaSel.innerHTML = esp.formulas.map((f,i)=>`<option value="${i}">${f.nome}</option>`).join('');
+  applyArea.style.display = 'block';
+
+  formulasEl.innerHTML = esp.formulas.map((f,i)=>{
+    const preco_kg = f.ings.reduce((sum,ing)=>{
+      const item=biblioteca.find(b=>b.name===ing.n);
+      return sum + (ing.p/100)*(item?item.price:0);
+    },0);
+    const custo_str = preco_kg>0 ? `R$\u00a0${preco_kg.toFixed(3).replace('.',','  )}/kg` : 'preço não cadastrado';
+    return `<div class="formula-ref-card">
+      <div class="formula-ref-head">
+        <span class="formula-ref-title">${f.nome}</span>
+        <span class="formula-ref-ckg">${custo_str}</span>
+      </div>
+      <div class="formula-ref-body">
+        ${f.ings.map(ing=>`<div class="formula-ing-row">
+          <span>${ing.n}</span>
+          <span class="ing-badge">${ing.p}%</span>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+
+  // ── Ingredientes típicos ──
+  const ingEl = document.getElementById('especie-ingredientes');
+  ingEl.innerHTML = `<div class="especie-ing-grid">${
+    esp.ingredientes.map(name=>{
+      const item=biblioteca.find(b=>b.name===name);
+      const priceStr=item?`R$\u00a0${item.price.toFixed(2).replace('.',',')}/kg`:'não cadastrado';
+      return `<div class="especie-ing-item">
+        <div>
+          <div class="especie-ing-name">${name}</div>
+          <div style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;">${priceStr}</div>
+        </div>
+        <button class="especie-ing-btn" onclick="addIngFromEspecie('${name}')">+ Usar</button>
+      </div>`;
+    }).join('')
+  }</div>`;
+
+  // scroll to content
+  content.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function aplicarFormulaEspecie(){
+  if(!especieAtiva) return;
+  const esp=ESPECIES[especieAtiva];
+  const idx=parseInt(document.getElementById('especie-formula-sel').value);
+  const formula=esp.formulas[idx];
+  if(!formula) return;
+  // apply to formulação
+  document.getElementById('ing-body').innerHTML='';ingCount=0;ings.length=0;
+  formula.ings.forEach(ing=>{
+    const item=biblioteca.find(b=>b.name===ing.n);
+    addIng(ing.n, ing.p, item?item.price:0);
+  });
+  saveDB();
+  showToast(`✓ Fórmula "${formula.nome}" aplicada!`,'ok');
+  // switch to formulacao tab
+  navTo('formulacao');
+}
+
+function addIngFromEspecie(name){
+  const item=biblioteca.find(b=>b.name===name);
+  addIng(name, 0, item?item.price:0);
+  showToast(`✓ "${name}" adicionado na formulação!`,'ok');
+}
+
+
+// ── TOUCH DRAG FOR MOBILE ────────────────────────────────────────────────────
+function addTouchDrag(row, key, idx){
+  const handle=row.querySelector('.drag-handle');
+  if(!handle)return;
+  let ghost=null, startY=0, origIdx=idx, currentTarget=null;
+
+  handle.addEventListener('touchstart', e=>{
+    e.preventDefault();
+    const touch=e.touches[0];
+    startY=touch.clientY;
+    row.classList.add('touch-dragging');
+    // create ghost
+    ghost=document.createElement('div');
+    ghost.className='drag-ghost';
+    ghost.textContent=row.querySelector('.preset-phase-btn')?.textContent||'';
+    ghost.style.left=(touch.clientX-60)+'px';
+    ghost.style.top=(touch.clientY-20)+'px';
+    document.body.appendChild(ghost);
+  },{passive:false});
+
+  handle.addEventListener('touchmove', e=>{
+    e.preventDefault();
+    const touch=e.touches[0];
+    if(ghost){ ghost.style.left=(touch.clientX-60)+'px'; ghost.style.top=(touch.clientY-20)+'px'; }
+    // find element under touch
+    const el=document.elementFromPoint(touch.clientX, touch.clientY);
+    const targetRow=el?.closest('.preset-phase');
+    if(targetRow && targetRow!==row && targetRow.dataset.key===key){
+      document.querySelectorAll('.preset-phase').forEach(r=>r.classList.remove('drag-over'));
+      targetRow.classList.add('drag-over');
+      currentTarget=targetRow;
+    }
+  },{passive:false});
+
+  handle.addEventListener('touchend', e=>{
+    row.classList.remove('touch-dragging');
+    if(ghost){ghost.remove();ghost=null;}
+    document.querySelectorAll('.preset-phase').forEach(r=>r.classList.remove('drag-over'));
+    if(currentTarget && currentTarget!==row){
+      const toIdx=parseInt(currentTarget.dataset.idx);
+      const fromIdx=parseInt(row.dataset.idx);
+      if(!isNaN(toIdx)&&!isNaN(fromIdx)&&toIdx!==fromIdx){
+        const moved=presets[key].phases.splice(fromIdx,1)[0];
+        presets[key].phases.splice(toIdx,0,moved);
+        renderPresets();saveDB();
+        showToast('✓ Ordem atualizada!','ok');
+      }
+    }
+    currentTarget=null;
+  });
+}
+
+// ── SALVAR COMO NOVA FÓRMULA ──────────────────────────────────────────────────
+let _formulaModified = false;
+let _formulaSnapshot = '';
+let _saveAsDismissed = false;
+
+function getFormulaSnapshot(){
+  return ings.map(({id})=>
+    getNomingrediente(id)+'|'+(document.getElementById('pct-'+id)?.value||0)+'|'+(document.getElementById('price-'+id)?.value||0)
+  ).join(';');
+}
+
+function markFormulaModified(){
+  if(window._restoring) return;
+  const snap = getFormulaSnapshot();
+  if(snap === _formulaSnapshot) return; // no real change
+  _formulaModified = true;
+  if(!_saveAsDismissed) showSaveAsBar();
+}
+
+function showSaveAsBar(){
+  const bar = document.getElementById('saveas-bar');
+  if(!bar) return;
+  // populate brand select
+  const sel = document.getElementById('saveas-brand');
+  sel.innerHTML = '<option value="">— Selecionar marca —</option>';
+  Object.entries(presets).forEach(([key,brand])=>{
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = brand.name;
+    sel.appendChild(opt);
+  });
+  // add "Nova marca..." option
+  const newOpt = document.createElement('option');
+  newOpt.value = '__new__';
+  newOpt.textContent = '+ Nova marca...';
+  sel.appendChild(newOpt);
+  bar.style.display = 'block';
+}
+
+function hideSaveAsBar(){
+  const bar = document.getElementById('saveas-bar');
+  if(bar) bar.style.display = 'none';
+}
+
+function dismissSaveAs(){
+  _saveAsDismissed = true;
+  hideSaveAsBar();
+}
+
+function saveAsPreset(){
+  const brandSel = document.getElementById('saveas-brand');
+  const nameInput = document.getElementById('saveas-name');
+  let brandKey = brandSel.value;
+  const phaseName = nameInput.value.trim();
+
+  if(!phaseName){ showToast('Digite um nome para a fórmula.','err'); nameInput.focus(); return; }
+
+  if(brandKey === '__new__'){
+    const newName = prompt('Nome da nova marca:');
+    if(!newName||!newName.trim()){ return; }
+    brandKey = newName.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'')+'_'+Date.now();
+    presets[brandKey] = {name:newName.trim(), phases:[]};
+    renderPresets();
+  }
+
+  if(!brandKey){ showToast('Selecione uma marca.','err'); brandSel.focus(); return; }
+
+  // build ingredients from current formulação
+  const ingredients = ings.map(({id})=>({
+    name: getNomingrediente(id)||'',
+    pct:  parseFloat(document.getElementById('pct-'+id)?.value)||0,
+    price:parseFloat(document.getElementById('price-'+id)?.value)||0,
+  })).filter(i=>i.name);
+
+  presets[brandKey].phases.push({ name: phaseName, ingredients });
+
+  renderPresets();
+  renderCompSourceSelects();
+  renderGastosFormulaSelect();
+  renderCronoFormulaSelect();
+  saveDB();
+
+  // reset state
+  _formulaModified = false;
+  _saveAsDismissed = false;
+  _formulaSnapshot = getFormulaSnapshot();
+  hideSaveAsBar();
+  nameInput.value = '';
+  brandSel.value = '';
+
+  showToast('✓ Fórmula "'+phaseName+'" salva em '+presets[brandKey].name+'!','ok');
+}
+
+function updateSaveAsBar(){
+  renderPresets(); // keep brand list in sync
+  const sel = document.getElementById('saveas-brand');
+  if(!sel) return;
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">— Selecionar marca —</option>';
+  Object.entries(presets).forEach(([key,brand])=>{
+    const opt=document.createElement('option');
+    opt.value=key; opt.textContent=brand.name;
+    if(key===cur) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  const newOpt=document.createElement('option');
+  newOpt.value='__new__'; newOpt.textContent='+ Nova marca...';
+  sel.appendChild(newOpt);
+}
+
+// ── BANCO DE DADOS ────────────────────────────────────────────────────────────
+function collectState(){
+  return{
+    version:5,savedAt:new Date().toISOString(),
+    lote:document.getElementById('lote-kg').value,
+    ingredients:ings.map(({id})=>({
+      name:getNomingrediente(id),
+      pct:document.getElementById('pct-'+id).value,
+      price:document.getElementById('price-'+id).value,
+      nota:document.getElementById('nota-'+id).value,
+    })),
+    periods:Array.from(document.querySelectorAll('.period-row')).map(row=>{
+      const pid=row.dataset.pid;
+      return{di:document.getElementById('di-'+pid).value,df:document.getElementById('df-'+pid).value,
+        ani:document.getElementById('ani-'+pid).value,cons:document.getElementById('cons-'+pid).value,
+        nota:document.getElementById('nota-per-'+pid).value};
+    }),
+    presets:JSON.parse(JSON.stringify(presets)),
+    precosHistory:JSON.parse(JSON.stringify(precosHistory)),
+    estoqueData:JSON.parse(JSON.stringify(estoqueData)),
+    compData:JSON.parse(JSON.stringify(compData)),
+    biblioteca:JSON.parse(JSON.stringify(biblioteca)),
+    biblioNextId,
+    fornecData:JSON.parse(JSON.stringify(fornecData)),
+    info:{prop:v('info-prop'),owner:v('info-owner'),date:v('info-date'),city:v('info-city'),phone:v('info-phone'),email:v('info-email'),raca:v('info-raca'),fase:v('info-fase'),obj:v('info-obj'),nanim:v('info-nanim'),pini:v('info-pini'),pfin:v('info-pfin'),gpd:v('info-gpd'),ca:v('info-ca'),cons:v('info-cons'),vet:v('info-vet'),vacina:v('info-vacina'),notas:v('info-notas')},
+  };
+}
+function v(id){const el=document.getElementById(id);return el?el.value:'';}
+function sv(id,val){const el=document.getElementById(id);if(el&&val!==undefined)el.value=val;}
+
+function setSavedLabel(txt){
+  document.querySelectorAll('.db-saved-label').forEach(el=>el.textContent=txt);
+}
+
+let _lastSavedJSON='';
+function saveDB(showMsg){
+  if(window._restoring)return;
+  const state=collectState();
+  const json=JSON.stringify(state);
+  const cmp=json.replace(/"savedAt":"[^"]*"/,'');
+  if(cmp===_lastSavedJSON && !showMsg)return; // nada mudou — evita gravações repetidas
+  _lastSavedJSON=cmp;
+  // 1) sempre salva local (backup imediato)
+  localStorage.setItem(DB_KEY,json);
+  const now=new Date();
+  // 2) tenta a nuvem
+  if(fbDB){
+    fbDB.ref(FB_PATH).set(state)
+      .then(()=>{setSavedLabel('☁ '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));})
+      .catch(err=>{
+        console.warn('Firebase indisponível, salvo localmente:',err.message);
+        setSavedLabel('💾 '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+      });
+  }else{
+    setSavedLabel('💾 '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+  }
+  if(showMsg)showToast('✓ Salvo!','ok');
+}
+
+function restoreState(data){
+  try{
+    document.getElementById('lote-kg').value=data.lote||100;
+
+    // ── carregar biblioteca PRIMEIRO — buildNameCell depende dela ──
+    if(data.biblioteca){biblioteca=data.biblioteca;biblioNextId=data.biblioNextId||biblioteca.length+1;}
+
+    // ── ingredientes ──
+    document.getElementById('ing-body').innerHTML='';ingCount=0;ings.length=0;
+    (data.ingredients||[]).forEach(i=>addIng(i.name,i.pct,i.price,i.nota||''));
+
+    // ── períodos ──
+    document.getElementById('period-body').innerHTML='';periodCount=0;
+    (data.periods||[]).forEach(p=>{
+      addPeriod();const pid=periodCount-1;
+      document.getElementById('di-'+pid).value=p.di||'';
+      document.getElementById('df-'+pid).value=p.df||'';
+      document.getElementById('ani-'+pid).value=p.ani||1;
+      document.getElementById('cons-'+pid).value=p.cons||2.5;
+      const notaEl=document.getElementById('nota-per-'+pid);if(notaEl)notaEl.value=p.nota||'';
+    });
+    if(!data.periods||data.periods.length===0)addPeriod();
+
+    // ── presets ──
+    if(data.presets){
+      Object.keys(presets).forEach(k=>delete presets[k]);
+      Object.keys(data.presets).forEach(k=>{presets[k]=data.presets[k];});
+    }
+    if(data.precosHistory)precosHistory=data.precosHistory;
+    if(data.estoqueData)Object.assign(estoqueData,data.estoqueData);
+    if(data.fornecData)fornecData=data.fornecData;
+    if(data.compData){compData=data.compData;['a','b'].forEach(s=>renderCompSide(s));}
+
+    // sync preset prices from biblioteca
+    syncPresetPricesFromBiblio();
+
+    if(data.info){const inf=data.info;sv('info-prop',inf.prop);sv('info-owner',inf.owner);sv('info-date',inf.date);sv('info-city',inf.city);sv('info-phone',inf.phone);sv('info-email',inf.email);sv('info-raca',inf.raca);sv('info-fase',inf.fase);sv('info-obj',inf.obj);sv('info-nanim',inf.nanim);sv('info-pini',inf.pini);sv('info-pfin',inf.pfin);sv('info-gpd',inf.gpd);sv('info-ca',inf.ca);sv('info-cons',inf.cons);sv('info-vet',inf.vet);sv('info-vacina',inf.vacina);sv('info-notas',inf.notas);}
+    renderPresets();recalcIng();recalcPeriods();renderHistorico();renderBiblioSelect();renderCompSourceSelects();renderGastosFormulaSelect();renderCronoFormulaSelect();
+    return true;
+  }catch(e){console.error(e);return false;}
+}
+
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(collectState(),null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+  a.download='racao_backup_'+new Date().toISOString().slice(0,10)+'.json';a.click();
+  showToast('✓ Backup exportado!','ok');
+}
+function importJSON(){
+  const input=document.createElement('input');input.type='file';input.accept='.json';
+  input.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const d=JSON.parse(ev.target.result);
+        window._restoring=true;
+        const ok=restoreState(d);
+        window._restoring=false;
+        if(ok){saveDB(false);showToast('✓ Importado e salvo!','ok');}
+        else showToast('✗ Erro no arquivo.','err');
+      }catch(err){showToast('✗ Arquivo inválido.','err');}
+    };
+    reader.readAsText(file);
+  };input.click();
+}
+function clearDB(){
+  if(!confirm('Limpar TODOS os dados (deste aparelho E da nuvem) e voltar ao padrão?'))return;
+  localStorage.removeItem(DB_KEY);
+  if(fbDB)fbDB.ref(FB_PATH).remove().catch(()=>{});
+  document.getElementById('ing-body').innerHTML='';document.getElementById('period-body').innerHTML='';
+  ingCount=0;ings.length=0;periodCount=0;precosHistory=[];estoqueData={};fornecData={};
+  loadDefaults();showToast('✓ Dados limpos.','ok');
+}
+function printReport(){window.print();}
+
+function showToast(msg,type='ok'){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:9px;font-size:12px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;font-family:DM Sans,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.15);';document.body.appendChild(t);}
+  t.textContent=msg;t.style.background=type==='ok'?'#1a6b3c':'#991b1b';t.style.color='#fff';t.style.opacity='1';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2800);
+}
+
+function loadDefaults(){
+  addIng('Milho',77.3,0.70);addIng('Farelo de soja',9.7,1.30);addIng('Núcleo proteico',10,5.60);
+  addIng('Ureia',1,3.00);addIng('Sal branco',2,1.00);addIng('Caroço de algodão',0,3.00);
+  addIng('Sorgo',0,0.00);addIng('Torta de algodão',0,0.00);addPeriod();
+  renderBiblioSelect();renderCompSourceSelects();renderGastosFormulaSelect();renderCronoFormulaSelect();
+  setTimeout(()=>{ _formulaSnapshot=getFormulaSnapshot(); hideSaveAsBar(); },300);
+}
+
+// ── BOOT ─────────────────────────────────────────────────────────────────────
+document.getElementById('lote-kg').addEventListener('input',recalcIng);
+setInterval(()=>saveDB(false),30000);
+document.addEventListener('input',()=>{
+  if(document.querySelector('.overlay')||window._restoring)return;
+  clearTimeout(window._st);window._st=setTimeout(()=>saveDB(false),2000);
+});
+
+function bootFromLocal(){
+  const _saved=localStorage.getItem(DB_KEY);
+  if(_saved){
+    try{
+      const d=JSON.parse(_saved);
+      window._restoring=true;
+      const ok=restoreState(d);
+      window._restoring=false;
+      if(ok){
+        const dt=new Date(d.savedAt);
+        showToast('✓ Restaurado deste aparelho ('+dt.toLocaleDateString('pt-BR')+')','ok');
+        setSavedLabel('💾 '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+        // se a nuvem estava vazia, sobe o backup local
+        if(fbDB)fbDB.ref(FB_PATH).set(d).catch(()=>{});
+        return;
+      }
+    }catch(e){console.error(e);}
+  }
+  loadDefaults();
+}
+
+function boot(){
+  if(!fbDB){bootFromLocal();return;}
+  // tenta a nuvem com timeout de 5s
+  let done=false;
+  const timer=setTimeout(()=>{if(!done){done=true;console.warn('Firebase demorou — usando dados locais');bootFromLocal();}},5000);
+  fbDB.ref(FB_PATH).once('value')
+    .then(snap=>{
+      if(done)return;done=true;clearTimeout(timer);
+      const d=snap.val();
+      if(d){
+        window._restoring=true;
+        const ok=restoreState(d);
+        window._restoring=false;
+        if(ok){
+          _lastSavedJSON=JSON.stringify(d).replace(/"savedAt":"[^"]*"/,'');
+          const dt=d.savedAt?new Date(d.savedAt):new Date();
+          showToast('☁ Dados carregados da nuvem!','ok');
+          setSavedLabel('☁ '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+          localStorage.setItem(DB_KEY,JSON.stringify(d)); // espelha local
+          return;
+        }
+      }
+      bootFromLocal();
+    })
+    .catch(err=>{
+      if(done)return;done=true;clearTimeout(timer);
+      console.warn('Erro ao ler Firebase:',err.message);
+      bootFromLocal();
+    });
+}
+boot();
+</script>
+
+<div id="install-banner" class="hidden">
+  <span>📱 Instalar como app no celular</span>
+  <div style="display:flex;gap:8px;align-items:center;">
+    <button id="install-banner-btn" onclick="installPWA()">Instalar</button>
+    <button id="install-banner-close" onclick="document.getElementById('install-banner').classList.add('hidden')">×</button>
+  </div>
+</div>
+
+<!-- ── BOTTOM NAV (mobile only) ── -->
+<div class="drawer-overlay" id="drawer-overlay" onclick="closeMoreDrawer()"></div>
+<div class="more-drawer" id="more-drawer">
+  <div class="more-drawer-title">Mais opções</div>
+  <div class="more-drawer-items">
+    <button class="more-drawer-item" onclick="navTo('especies');closeMoreDrawer()">
+      <span>🐄</span><span>Espécies</span>
+    </button>
+    <button class="more-drawer-item" onclick="navTo('comparador');closeMoreDrawer()">
+      <span>⚖️</span><span>Comparar</span>
+    </button>
+    <button class="more-drawer-item" onclick="navTo('estoque');closeMoreDrawer()">
+      <span>📦</span><span>Estoque</span>
+    </button>
+    <button class="more-drawer-item" onclick="navTo('graficos');closeMoreDrawer()">
+      <span>📊</span><span>Gráficos</span>
+    </button>
+    <button class="more-drawer-item" onclick="navTo('informacoes');closeMoreDrawer()">
+      <span>📋</span><span>Info</span>
+    </button>
+    <button class="more-drawer-item" onclick="exportJSON();closeMoreDrawer()">
+      <span>⬇️</span><span>Exportar</span>
+    </button>
+    <button class="more-drawer-item" onclick="importJSON();closeMoreDrawer()">
+      <span>⬆️</span><span>Importar</span>
+    </button>
+    <button class="more-drawer-item" onclick="printReport();closeMoreDrawer()">
+      <span>🖨️</span><span>Imprimir</span>
+    </button>
+    <button class="more-drawer-item danger" onclick="clearDB();closeMoreDrawer()" style="background:var(--red-bg);">
+      <span>🗑️</span><span style="color:var(--red);">Limpar</span>
+    </button>
+  </div>
+</div>
+
+<nav class="bottom-nav" id="bottom-nav">
+  <div class="bottom-nav-items">
+    <button class="bottom-nav-item active" id="nav-formulacao" onclick="navTo('formulacao')">
+      <div class="nav-icon">🌾</div>
+      <span class="nav-label">Formulação</span>
+    </button>
+    <button class="bottom-nav-item" id="nav-biblioteca" onclick="navTo('biblioteca')">
+      <div class="nav-icon">💰</div>
+      <span class="nav-label">Preços</span>
+    </button>
+    <button class="bottom-nav-item" id="nav-cronograma" onclick="navTo('cronograma')">
+      <div class="nav-icon">📅</div>
+      <span class="nav-label">Cronograma</span>
+    </button>
+    <button class="bottom-nav-item" id="nav-gastos" onclick="navTo('gastos')">
+      <div class="nav-icon">💵</div>
+      <span class="nav-label">Gastos</span>
+    </button>
+    <button class="bottom-nav-item" id="nav-more" onclick="toggleMoreDrawer()">
+      <div class="nav-icon">⋯</div>
+      <span class="nav-label">Mais</span>
+    </button>
+  </div>
+</nav>
+
+<button class="fab-save" onclick="saveDB(true)" title="Salvar" id="fab-save">💾</button>
+
+</body>
+</html>
