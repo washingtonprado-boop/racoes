@@ -1009,11 +1009,11 @@ function buildNameCell(id, name){
   const nucleos=biblioteca.filter(b=>b.category==='Núcleo proteico');
   if(isNucleoName(name) && nucleos.length>0){
     const opts=nucleos.map(n=>`<option value="${n.name}" ${n.name===name?'selected':''}>${n.name} — R$\u00a0${n.price.toFixed(2).replace('.',',')}/kg</option>`).join('');
-    return `<select id="name-${id}" onchange="onNucleoChange(${id},this)" style="width:100%;font-size:13px;font-weight:500;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:#fff;">
+    return `<select id="name-${id}" title="${name.replace(/"/g,'&quot;')}" onchange="this.title=this.value;onNucleoChange(${id},this)" style="width:100%;font-size:13px;font-weight:500;padding:4px 6px;border:1px solid var(--border);border-radius:6px;background:#fff;">
       ${opts}
     </select>`;
   }
-  return `<input type="text" id="name-${id}" value="${name}" placeholder="Nome" style="text-align:left;font-weight:500;">`;
+  return `<input type="text" id="name-${id}" value="${name}" title="${name.replace(/"/g,'&quot;')}" placeholder="Nome" style="text-align:left;font-weight:500;" oninput="this.title=this.value">`;
 }
 
 function onNucleoChange(id, sel){
@@ -1062,7 +1062,7 @@ function renderPresets(){
   Object.entries(presets).forEach(([key,brand])=>{
     const div=document.createElement('div');div.className='preset-brand';div.id='brand-'+key;
     div.innerHTML=`<div class="preset-brand-header" onclick="toggleBrand('${key}')">
-        <div class="preset-brand-name">${brand.name} <span style="font-size:11px;font-weight:400;color:var(--text3);">(${brand.phases.length})</span></div>
+        <div class="preset-brand-name" title="${brand.name.replace(/"/g,'&quot;')}">${brand.name} <span style="font-size:11px;font-weight:400;color:var(--text3);">(${brand.phases.length})</span></div>
         <div style="display:flex;align-items:center;gap:4px;">
           <button class="btn-ghost" onclick="event.stopPropagation();deleteBrand('${key}')" title="Excluir marca" style="font-size:12px;color:var(--red);">🗑</button>
           <span class="preset-chevron">▼</span>
@@ -1081,7 +1081,7 @@ function renderPresets(){
       row.dataset.idx=i;
       row.innerHTML=`
         <span class="drag-handle" title="Arrastar para reordenar">⠿</span>
-        <button class="preset-phase-btn" onclick="applyPreset('${key}',${i})" title="Aplicar">${p.name||'Fase '+(i+1)}</button>
+        <button class="preset-phase-btn" onclick="applyPreset('${key}',${i})" title="${(p.name||'Fase '+(i+1)).replace(/"/g,'&quot;')} — clique para aplicar">${p.name||'Fase '+(i+1)}</button>
         <button class="btn-ghost" onclick="editPreset('${key}',${i})" style="font-size:12px;">✎</button>
         <button class="btn-ghost" onclick="deletePresetPhase('${key}',${i})">×</button>`;
       // ── drag events ──
@@ -1539,7 +1539,7 @@ function renderHistorico(){
     return;
   }
   const latest=precosHistory[precosHistory.length-1];
-  document.getElementById('historico-thead').innerHTML='<th style="text-align:left;">Data</th>'+latest.prices.map(p=>`<th style="text-align:right;font-size:10px;">${p.name}</th>`).join('')+'<th></th>';
+  document.getElementById('historico-thead').innerHTML='<th style="text-align:left;">Data</th>'+latest.prices.map(p=>`<th style="text-align:right;font-size:10px;" title="${p.name.replace(/"/g,'&quot;')}">${p.name}</th>`).join('')+'<th></th>';
   tbody.innerHTML=precosHistory.slice().reverse().map((entry,ri)=>{
     const realIdx=precosHistory.length-1-ri;
     return`<tr style="border-bottom:1px solid var(--border);">
@@ -1660,7 +1660,7 @@ function renderEstoque(){
     else if(qty<=alerta){status='Estoque baixo';cls='est-low';cntLow++;}
     else{status='OK';cls='est-ok';cntOk++;}
     const tr=document.createElement('tr');tr.style.borderBottom='1px solid var(--border)';
-    const tdName=document.createElement('td');tdName.style.fontWeight='600';tdName.textContent=name;
+    const tdName=document.createElement('td');tdName.style.fontWeight='600';tdName.textContent=name;tdName.title=name;
     const tdQty=document.createElement('td');
     const qtyInp=document.createElement('input');
     qtyInp.type='number';qtyInp.min='0';qtyInp.step='0.1';qtyInp.value=qty.toFixed(1);
@@ -1884,8 +1884,8 @@ function renderBiblio() {
       : '<span style="color:var(--text3);">= igual</span>';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td><button class="btn-ghost" onclick="deleteBiblioItem(${item.id})">×</button></td>
-      <td><input type="text" value="${item.name}" style="text-align:left;font-weight:500;"
-          onchange="updateBiblio(${item.id},'name',this.value)"></td>
+      <td><input type="text" value="${item.name}" title="${item.name.replace(/"/g,'&quot;')}" style="text-align:left;font-weight:500;"
+          oninput="this.title=this.value" onchange="updateBiblio(${item.id},'name',this.value)"></td>
       <td><input type="number" min="0" step="0.01" value="${item.price.toFixed(2)}"
           style="font-family:'DM Mono',monospace;font-weight:600;color:var(--green);"
           oninput="updateBiblio(${item.id},'price',parseFloat(this.value)||0)"></td>
