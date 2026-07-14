@@ -2431,18 +2431,32 @@ function saveDB(showMsg){
   // 1) sempre salva local (backup imediato)
   localStorage.setItem(DB_KEY,json);
   const now=new Date();
-  // 2) tenta a nuvem
+  const hora=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  // 2) nuvem: grava como texto JSON — imune a nomes com . # $ / e a listas vazias,
+  //    que o Firebase rejeitaria ou apagaria se gravados como objeto
   if(fbDB){
-    fbDB.ref(FB_PATH).set(state)
-      .then(()=>{setSavedLabel('☁ '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));})
+    fbDB.ref(FB_PATH).set({json:json,savedAt:state.savedAt})
+      .then(()=>{
+        setSavedLabel('☁ '+hora);
+        if(showMsg)showToast('✓ Salvo na nuvem!','ok');
+      })
       .catch(err=>{
-        console.warn('Firebase indisponível, salvo localmente:',err.message);
-        setSavedLabel('💾 '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+        console.warn('Falha ao salvar na nuvem:',err.message);
+        setSavedLabel('💾 '+hora);
+        _avisoNuvem();
+        if(showMsg)showToast('✓ Salvo neste aparelho','ok');
       });
   }else{
-    setSavedLabel('💾 '+now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+    setSavedLabel('💾 '+hora);
+    if(showMsg)showToast('✓ Salvo neste aparelho','ok');
   }
-  if(showMsg)showToast('✓ Salvo!','ok');
+}
+let _ultimoAviso=0;
+function _avisoNuvem(){
+  // avisa no máximo 1x por minuto para não encher a tela
+  if(Date.now()-_ultimoAviso<60000)return;
+  _ultimoAviso=Date.now();
+  showToast('⚠ Sem conexão com a nuvem — dados salvos só neste aparelho','err');
 }
 
 function restoreState(data){
@@ -2504,7 +2518,10 @@ function importJSON(){
         window._restoring=true;
         const ok=restoreState(d);
         window._restoring=false;
-        if(ok){saveDB(false);showToast('✓ Importado e salvo!','ok');}
+        if(ok){
+          _lastSavedJSON=''; // força a gravação mesmo se parecer igual
+          saveDB(true);      // salva local + nuvem e mostra confirmação
+        }
         else showToast('✗ Erro no arquivo.','err');
       }catch(err){showToast('✗ Arquivo inválido.','err');}
     };
@@ -2556,8 +2573,8 @@ function bootFromLocal(){
         const dt=new Date(d.savedAt);
         showToast('✓ Restaurado deste aparelho ('+dt.toLocaleDateString('pt-BR')+')','ok');
         setSavedLabel('💾 '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
-        // se a nuvem estava vazia, sobe o backup local
-        if(fbDB)fbDB.ref(FB_PATH).set(d).catch(()=>{});
+        // se a nuvem estava vazia, sobe o backup local (formato novo)
+        if(fbDB)fbDB.ref(FB_PATH).set({json:_saved,savedAt:d.savedAt||new Date().toISOString()}).catch(()=>{});
         return;
       }
     }catch(e){console.error(e);}
@@ -2573,7 +2590,12 @@ function boot(){
   fbDB.ref(FB_PATH).once('value')
     .then(snap=>{
       if(done)return;done=true;clearTimeout(timer);
-      const d=snap.val();
+      const raw=snap.val();
+      let d=null;
+      if(raw){
+        try{ d = raw.json ? JSON.parse(raw.json) : raw; }
+        catch(e){ console.error('Dados da nuvem corrompidos:',e); d=null; }
+      }
       if(d){
         window._restoring=true;
         const ok=restoreState(d);
