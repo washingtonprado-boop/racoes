@@ -86,6 +86,12 @@ h1,h2,h3,.sec,.card-title{letter-spacing:-.015em;}
   margin:26px 0 10px;
 }
 .sec:first-child{margin-top:0;}
+.sec-toggle{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;padding:6px 0;}
+.sec-chevron{font-size:14px;color:var(--text3);transition:transform .2s;}
+.presets-recolhido #presets-bar{display:none;}
+.presets-recolhido #presets-chevron{transform:rotate(-90deg);}
+@keyframes flashCard{0%{box-shadow:0 0 0 4px rgba(22,163,74,.45);}100%{box-shadow:var(--shadow);}}
+.card-flash{animation:flashCard 1.2s ease;}
 
 /* ── CARDS ──────────────────────────────────────────────────────── */
 .card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow);margin-bottom:14px;}
@@ -394,7 +400,10 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
     <input type="number" id="lote-kg" value="100" min="1" step="1">
     <span style="font-size:14px;color:var(--text3);">kg — base para quantidades</span>
   </div>
-  <div class="sec" style="margin-top:0;">Fórmulas prontas por marca</div>
+  <div class="sec sec-toggle" style="margin-top:0;" onclick="togglePresetsSection()">
+    <span>Fórmulas prontas por marca</span>
+    <span class="sec-chevron" id="presets-chevron">▼</span>
+  </div>
   <div class="presets-bar" id="presets-bar">
     <button class="btn preset-add-brand-btn" onclick="addPresetBrand()">+ Marca</button>
   </div>
@@ -402,7 +411,7 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
   <div id="ok-pct" class="alert alert-ok">✓ Formulação correta — soma: 100%</div>
 
   
-      <div class="card">
+      <div class="card" id="card-ingredientes">
         <div class="card-header">
           <span class="card-title">Ingredientes</span>
           <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -1134,6 +1143,9 @@ function syncBrandOrder(){
   renderPresets();saveDB();
 }
 
+function togglePresetsSection(){
+  document.getElementById('tab-formulacao').classList.toggle('presets-recolhido');
+}
 function toggleBrand(key){
   const div=document.getElementById('brand-'+key);
   if(!div)return;
@@ -1168,6 +1180,16 @@ function applyPreset(key,idx){
   });
   saveDB();
   showToast('✓ Fórmula "'+phase.name+'" aplicada!','ok');
+  // recolhe as fórmulas e coloca os ingredientes em evidência
+  document.querySelectorAll('.preset-brand').forEach(d=>d.classList.remove('open'));
+  document.getElementById('tab-formulacao').classList.add('presets-recolhido');
+  const cardIng=document.getElementById('card-ingredientes');
+  if(cardIng){
+    cardIng.scrollIntoView({behavior:'smooth',block:'start'});
+    cardIng.classList.remove('card-flash');
+    void cardIng.offsetWidth; // reinicia a animação
+    cardIng.classList.add('card-flash');
+  }
 }
 
 // ── MODAL DE EDIÇÃO DE FÓRMULA ──────────────────────────────────────────────
