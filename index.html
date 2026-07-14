@@ -811,6 +811,23 @@ const firebaseConfig = {
   measurementId: "G-D1ZHBSVCMS"
 };
 const FB_PATH='calculadoraRacao/dados';
+
+// ── SENHA DAS FÓRMULAS ────────────────────────────────────────────────────────
+// Protege adicionar/editar/excluir marcas e fórmulas. TROQUE A SENHA AQUI:
+const SENHA_FORMULAS='1234';
+let _formulasLiberadas=false; // vale até fechar/recarregar a página
+function comSenha(acao){
+  if(_formulasLiberadas){acao();return;}
+  const s=prompt('🔒 Senha para gerenciar fórmulas:');
+  if(s===null)return; // cancelou
+  if(s===SENHA_FORMULAS){
+    _formulasLiberadas=true;
+    showToast('🔓 Fórmulas liberadas nesta sessão','ok');
+    acao();
+  }else{
+    showToast('✗ Senha incorreta','err');
+  }
+}
 let fbDB=null, _fbOnline=false;
 try{
   if(typeof firebase!=='undefined'){
@@ -1127,7 +1144,8 @@ function toggleBrand(key){
   if(!wasOpen) div.classList.add('open');
 }
 
-function addPresetPhase(key){
+function addPresetPhase(key){ comSenha(()=>_addPresetPhase(key)); }
+function _addPresetPhase(key){
   const phase={name:'Nova fase',ingredients:[]};
   presets[key].phases.push(phase);
   openPresetModal(key,presets[key].phases.length-1);
@@ -1135,7 +1153,8 @@ function addPresetPhase(key){
   // keep brand open after adding phase
   const bd=document.getElementById('brand-'+key);if(bd)bd.classList.add('open');
 }
-function deletePresetPhase(key,idx){presets[key].phases.splice(idx,1);renderPresets();const bd=document.getElementById('brand-'+key);if(bd&&presets[key].phases.length>0)bd.classList.add('open');}
+function deletePresetPhase(key,idx){ comSenha(()=>_deletePresetPhase(key,idx)); }
+function _deletePresetPhase(key,idx){presets[key].phases.splice(idx,1);renderPresets();const bd=document.getElementById('brand-'+key);if(bd&&presets[key].phases.length>0)bd.classList.add('open');}
 function applyPreset(key,idx){
   const phase=presets[key].phases[idx];if(!phase)return;
   document.getElementById('ing-body').innerHTML='';ingCount=0;ings.length=0;
@@ -1171,7 +1190,7 @@ function openPresetModal(key,idx){
   renderModalOverlay(key,idx,phase.name||'Nova fase');
 }
 // keep old name working
-function editPreset(key,idx){ openPresetModal(key,idx); }
+function editPreset(key,idx){ comSenha(()=>openPresetModal(key,idx)); }
 
 function renderModalOverlay(key,idx,phaseName){
   document.querySelectorAll('.overlay').forEach(o=>o.remove());
@@ -1331,12 +1350,14 @@ function modalSave(){
 // ── compat stubs ──
 function addMRow(){ modalAddBlankRow(); }
 function savePreset(key,idx,btn){ modalSave(); }
-function addPresetBrand(){
+function addPresetBrand(){ comSenha(_addPresetBrand); }
+function _addPresetBrand(){
   const name=prompt('Nome da marca:');if(!name||!name.trim())return;
   const key=name.trim().toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'')+'_'+Date.now();
   presets[key]={name:name.trim(),phases:[]};renderPresets();saveDB();
 }
-function deleteBrand(key){
+function deleteBrand(key){ comSenha(()=>_deleteBrand(key)); }
+function _deleteBrand(key){
   if(!confirm('Excluir a marca "'+presets[key].name+'" e todas as suas fases?'))return;
   delete presets[key];renderPresets();saveDB();showToast('✓ Marca excluída.','ok');
 }
