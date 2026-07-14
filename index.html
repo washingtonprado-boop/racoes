@@ -323,6 +323,10 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .drag-ghost{position:fixed;pointer-events:none;z-index:9999;background:var(--white);border:2px solid var(--green);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;color:var(--green);box-shadow:0 8px 24px rgba(0,0,0,.2);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
 @keyframes slideIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 
+.sync-banner{display:none;position:sticky;top:calc(56px + env(safe-area-inset-top,0));z-index:590;background:var(--blue-bg);border-bottom:1px solid var(--blue-bd);color:var(--blue);padding:10px 14px;align-items:center;gap:10px;font-size:14px;font-weight:600;flex-wrap:wrap;}
+.sync-banner.show{display:flex;}
+.sync-banner button{background:var(--blue);color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:14px;font-weight:700;cursor:pointer;min-height:40px;font-family:'Inter',sans-serif;}
+.sync-banner .sync-dismiss{background:none;color:var(--blue);font-size:20px;padding:4px 10px;margin-left:auto;}
 .desktop-only{display:none;}
 .hidden{display:none !important;}
 
@@ -371,6 +375,11 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
   </div>
 </div>
 
+<div id="sync-banner" class="sync-banner">
+  <span>📥 Os dados foram atualizados em outro aparelho.</span>
+  <button onclick="aplicarDadosNuvem()">Recarregar</button>
+  <button class="sync-dismiss" onclick="document.getElementById('sync-banner').classList.remove('show')" title="Ignorar">×</button>
+</div>
 <div class="tab-bar">
   <div class="tab active" onclick="showTab('formulacao',this)">Formulação</div>
   <div class="tab" onclick="showTab('biblioteca',this)">Ingredientes & Preços</div>
@@ -1169,6 +1178,7 @@ function deletePresetPhase(key,idx){ comSenha(()=>_deletePresetPhase(key,idx)); 
 function _deletePresetPhase(key,idx){presets[key].phases.splice(idx,1);renderPresets();const bd=document.getElementById('brand-'+key);if(bd&&presets[key].phases.length>0)bd.classList.add('open');}
 function applyPreset(key,idx){
   const phase=presets[key].phases[idx];if(!phase)return;
+  if(ings.length>0 && !confirm('Substituir a formulação atual pela fórmula "'+(phase.name||'Fase '+(idx+1))+'"?'))return;
   document.getElementById('ing-body').innerHTML='';ingCount=0;ings.length=0;
   phase.ingredients.forEach(ing=>{
     // always use current price from biblioteca if ingredient exists there
@@ -2604,6 +2614,34 @@ document.addEventListener('input',()=>{
   clearTimeout(window._st);window._st=setTimeout(()=>saveDB(false),2000);
 });
 
+// ── SINCRONIZAÇÃO ENTRE APARELHOS ────────────────────────────────────────────
+let _dadosNuvemPendentes=null;
+function iniciarEscutaNuvem(){
+  if(!fbDB)return;
+  fbDB.ref(FB_PATH).on('value',snap=>{
+    const raw=snap.val();
+    if(!raw||!raw.json)return;
+    const cmp=raw.json.replace(/"savedAt":"[^"]*"/,'');
+    if(cmp===_lastSavedJSON)return; // é a nossa própria gravação — ignora
+    // outro aparelho gravou algo diferente
+    try{_dadosNuvemPendentes=JSON.parse(raw.json);}catch(e){return;}
+    document.getElementById('sync-banner').classList.add('show');
+  });
+}
+function aplicarDadosNuvem(){
+  if(!_dadosNuvemPendentes)return;
+  const d=_dadosNuvemPendentes;_dadosNuvemPendentes=null;
+  window._restoring=true;
+  const ok=restoreState(d);
+  window._restoring=false;
+  document.getElementById('sync-banner').classList.remove('show');
+  if(ok){
+    _lastSavedJSON=JSON.stringify(d).replace(/"savedAt":"[^"]*"/,'');
+    localStorage.setItem(DB_KEY,JSON.stringify(d));
+    showToast('☁ Dados atualizados!','ok');
+  }
+}
+
 function bootFromLocal(){
   const _saved=localStorage.getItem(DB_KEY);
   if(_saved){
@@ -2616,13 +2654,16 @@ function bootFromLocal(){
         const dt=new Date(d.savedAt);
         showToast('✓ Restaurado deste aparelho ('+dt.toLocaleDateString('pt-BR')+')','ok');
         setSavedLabel('💾 '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
+        _lastSavedJSON=_saved.replace(/"savedAt":"[^"]*"/,'');
         // se a nuvem estava vazia, sobe o backup local (formato novo)
         if(fbDB)fbDB.ref(FB_PATH).set({json:_saved,savedAt:d.savedAt||new Date().toISOString()}).catch(()=>{});
+        iniciarEscutaNuvem();
         return;
       }
     }catch(e){console.error(e);}
   }
   loadDefaults();
+  iniciarEscutaNuvem();
 }
 
 function boot(){
@@ -2649,6 +2690,7 @@ function boot(){
           showToast('☁ Dados carregados da nuvem!','ok');
           setSavedLabel('☁ '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
           localStorage.setItem(DB_KEY,JSON.stringify(d)); // espelha local
+          iniciarEscutaNuvem();
           return;
         }
       }
