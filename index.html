@@ -129,6 +129,7 @@ textarea{min-height:90px;line-height:1.6;resize:vertical;}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(22,163,74,.15);}
 tbody input,tbody select,tbody textarea{min-height:42px;padding:8px 10px;border-color:transparent;background:var(--bg);border-radius:10px;}
 tbody input:focus,tbody select:focus,tbody textarea:focus{border-color:var(--green2);background:#fff;}
+tbody input.preco-local{border:1.5px solid var(--amber) !important;background:var(--amber-bg) !important;color:var(--amber) !important;}
 textarea.nome-produto{
   text-align:left;font-weight:500;font-size:16px !important;
   resize:none;overflow:hidden;line-height:1.35;
@@ -476,7 +477,8 @@ textarea.nome-produto{
 
 <!-- ══ INGREDIENTES & PREÇOS ══ -->
 <div class="page" id="tab-biblioteca">
-  <p style="font-size:13px;color:var(--text2);margin-bottom:16px;">Cadastre ingredientes, atualize preços de mercado e acompanhe o histórico. Clique em <strong>+ Usar</strong> para adicionar na formulação.</p>
+  <p style="font-size:14px;color:var(--text2);margin-bottom:16px;">Cadastre ingredientes, atualize preços de mercado e acompanhe o histórico. Clique em <strong>+ Usar</strong> para adicionar na formulação.<br>
+  <span style="color:var(--amber);">💡 Preços alterados valem <strong>só neste aparelho</strong> (ficam em âmbar). A base do sistema só muda com a senha de administrador.</span></p>
 
   <div class="card">
     <div class="card-header">
@@ -484,6 +486,7 @@ textarea.nome-produto{
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
         <button class="btn btn-green" onclick="applyPrecos()">✓ Aplicar preços na formulação</button>
         <button class="btn" onclick="addHistoricoEntry()">📋 Registrar preços de hoje</button>
+        <button class="btn" onclick="restaurarPrecosBase()" title="Descarta os preços alterados neste aparelho">↩ Preços da base</button>
         <button class="btn" onclick="addBiblioItem()">+ Novo ingrediente</button>
       </div>
     </div>
@@ -837,6 +840,65 @@ const firebaseConfig = {
 };
 const FB_PATH='calculadoraRacao/dados';
 
+// ── PREÇOS LOCAIS (por aparelho) ─────────────────────────────────────────────
+// Preços alterados sem senha valem só neste aparelho e NÃO mudam a base na nuvem.
+const PRECOS_LOCAIS_KEY='racao_precos_locais';
+let precosLocais={};   // {nomeProduto: preço deste aparelho}
+let precosBase={};     // {nomeProduto: preço oficial da base (nuvem)}
+try{precosLocais=JSON.parse(localStorage.getItem(PRECOS_LOCAIS_KEY)||'{}');}catch(e){precosLocais={};}
+
+function salvarPrecosLocais(){localStorage.setItem(PRECOS_LOCAIS_KEY,JSON.stringify(precosLocais));}
+
+function snapshotPrecosBase(state){
+  precosBase={};
+  (state.biblioteca||[]).forEach(b=>{precosBase[b.name]=parseFloat(b.price)||0;});
+}
+
+function aplicarPrecosLocais(){
+  let mudou=false;
+  biblioteca.forEach(b=>{
+    if(precosLocais[b.name]!==undefined && b.price!==precosLocais[b.name]){
+      b.price=precosLocais[b.name];mudou=true;
+    }
+  });
+  return mudou;
+}
+
+function registrarPrecoLocal(nome,preco){
+  if(!nome)return;
+  preco=parseFloat(preco)||0;
+  if(_formulasLiberadas){
+    // administrador (senha): altera a base oficial
+    precosBase[nome]=preco;
+    delete precosLocais[nome];
+  }else if(precosBase[nome]!==undefined && Math.abs(precosBase[nome]-preco)<0.0001){
+    delete precosLocais[nome]; // voltou ao preço da base
+  }else{
+    precosLocais[nome]=preco;
+  }
+  salvarPrecosLocais();
+}
+
+function restaurarPrecosBase(){
+  if(!confirm('Descartar os preços deste aparelho e voltar aos preços da base?'))return;
+  precosLocais={};salvarPrecosLocais();
+  biblioteca.forEach(b=>{if(precosBase[b.name]!==undefined)b.price=precosBase[b.name];});
+  renderBiblio();renderBiblioSelect();recalcIng();saveDB(false);
+  showToast('↩ Preços da base restaurados','ok');
+}
+
+// versão do estado que vai para a NUVEM: preços sempre da base (sem senha)
+function estadoParaNuvem(state){
+  if(_formulasLiberadas)return state; // admin grava os preços na base
+  const s=JSON.parse(JSON.stringify(state));
+  (s.biblioteca||[]).forEach(b=>{if(precosBase[b.name]!==undefined)b.price=precosBase[b.name];});
+  (s.ingredients||[]).forEach(i=>{if(precosBase[i.name]!==undefined)i.price=String(precosBase[i.name]);});
+  if(s.presets)Object.values(s.presets).forEach(br=>(br.phases||[]).forEach(ph=>(ph.ingredients||[]).forEach(ing=>{
+    if(precosBase[ing.name]!==undefined)ing.price=precosBase[ing.name];
+  })));
+  return s;
+}
+
 // ── SENHA DAS FÓRMULAS ────────────────────────────────────────────────────────
 // Protege adicionar/editar/excluir marcas e fórmulas. TROQUE A SENHA AQUI:
 const SENHA_FORMULAS='1234';
@@ -1025,6 +1087,13 @@ function addIng(name='',pct=0,price=0,nota=''){
     <td><input type="text" id="nota-${id}" value="${nota}" placeholder="—" style="font-size:13px;"></td>`;
   document.getElementById('ing-body').appendChild(tr);
   tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',recalcIng));
+  const priceInp=tr.querySelector('#price-'+id);
+  if(priceInp)priceInp.addEventListener('change',()=>{
+    const nome=getNomingrediente(id);
+    registrarPrecoLocal(nome,priceInp.value);
+    const bi=biblioteca.find(b=>b.name===nome);
+    if(bi){bi.price=parseFloat(priceInp.value)||0;}
+  });
   const sel=tr.querySelector('select[id^="name-"]');
   if(sel) sel.addEventListener('change',()=>{ recalcIng(); saveDB(); });
   makeIngRowDraggable(tr);
@@ -1972,6 +2041,8 @@ function _renderBiblio() {
       <td><textarea rows="1" class="nome-produto" onkeydown="if(event.key==='Enter')event.preventDefault()" title="${item.name.replace(/"/g,'&quot;')}"
           oninput="this.title=this.value;autoGrow(this)" onchange="updateBiblio(${item.id},'name',this.value)">${item.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></td>
       <td><input type="number" min="0" step="0.01" value="${item.price.toFixed(2)}"
+          class="${precosLocais[item.name]!==undefined?'preco-local':''}"
+          title="${precosLocais[item.name]!==undefined?('Preço deste aparelho — base: R$ '+(precosBase[item.name]!==undefined?precosBase[item.name].toFixed(2).replace('.',','):'—')):''}"
           style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--green);"
           oninput="updateBiblio(${item.id},'price',parseFloat(this.value)||0)"></td>
       <td><select onchange="updateBiblio(${item.id},'category',this.value)" style="font-size:14px;">
@@ -2009,6 +2080,7 @@ function updateBiblio(id, field, value) {
 
   if (field === 'price') {
     const newPrice = parseFloat(value) || 0;
+    registrarPrecoLocal(item.name, newPrice);
     // atualiza formulação atual
     ings.forEach(({id: ingId}) => {
       if (getNomingrediente(ingId) === item.name) {
@@ -2497,8 +2569,8 @@ function saveDB(showMsg){
   if(window._restoring)return;
   const state=collectState();
   const json=JSON.stringify(state);
-  const cmp=json.replace(/"savedAt":"[^"]*"/,'');
-  if(cmp===_lastSavedJSON && !showMsg)return; // nada mudou — evita gravações repetidas
+  const cmp=JSON.stringify(estadoParaNuvem(state)).replace(/"savedAt":"[^"]*"/,'');
+  if(cmp===_lastSavedJSON && json===localStorage.getItem(DB_KEY) && !showMsg)return;
   _lastSavedJSON=cmp;
   // 1) sempre salva local (backup imediato)
   localStorage.setItem(DB_KEY,json);
@@ -2507,7 +2579,8 @@ function saveDB(showMsg){
   // 2) nuvem: grava como texto JSON — imune a nomes com . # $ / e a listas vazias,
   //    que o Firebase rejeitaria ou apagaria se gravados como objeto
   if(fbDB){
-    fbDB.ref(FB_PATH).set({json:json,savedAt:state.savedAt})
+    const jsonNuvem=JSON.stringify(estadoParaNuvem(state));
+    fbDB.ref(FB_PATH).set({json:jsonNuvem,savedAt:state.savedAt})
       .then(()=>{
         setSavedLabel('☁ '+hora);
         if(showMsg)showToast('✓ Salvo na nuvem!','ok');
@@ -2656,6 +2729,8 @@ function aplicarDadosNuvem(){
   document.getElementById('sync-banner').classList.remove('show');
   if(ok){
     _lastSavedJSON=JSON.stringify(d).replace(/"savedAt":"[^"]*"/,'');
+    snapshotPrecosBase(d);
+    if(aplicarPrecosLocais()){renderBiblio();renderBiblioSelect();recalcIng();}
     localStorage.setItem(DB_KEY,JSON.stringify(d));
     showToast('☁ Dados atualizados!','ok');
   }
@@ -2674,6 +2749,8 @@ function bootFromLocal(){
         showToast('✓ Restaurado deste aparelho ('+dt.toLocaleDateString('pt-BR')+')','ok');
         setSavedLabel('💾 '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
         _lastSavedJSON=_saved.replace(/"savedAt":"[^"]*"/,'');
+        snapshotPrecosBase(d);
+        if(aplicarPrecosLocais()){renderBiblio();renderBiblioSelect();recalcIng();}
         // se a nuvem estava vazia, sobe o backup local (formato novo)
         if(fbDB)fbDB.ref(FB_PATH).set({json:_saved,savedAt:d.savedAt||new Date().toISOString()}).catch(()=>{});
         iniciarEscutaNuvem();
@@ -2705,6 +2782,8 @@ function boot(){
         window._restoring=false;
         if(ok){
           _lastSavedJSON=JSON.stringify(d).replace(/"savedAt":"[^"]*"/,'');
+          snapshotPrecosBase(d);
+          if(aplicarPrecosLocais()){renderBiblio();renderBiblioSelect();recalcIng();}
           const dt=d.savedAt?new Date(d.savedAt):new Date();
           showToast('☁ Dados carregados da nuvem!','ok');
           setSavedLabel('☁ '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}));
