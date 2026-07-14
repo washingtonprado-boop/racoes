@@ -127,8 +127,15 @@ input[type="number"],input[type="date"],input[type="text"],textarea,select{
 input[type="number"]{text-align:right;font-family:'JetBrains Mono',monospace;}
 textarea{min-height:90px;line-height:1.6;resize:vertical;}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(22,163,74,.15);}
-tbody input,tbody select{min-height:42px;padding:8px 10px;border-color:transparent;background:var(--bg);border-radius:10px;}
-tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;}
+tbody input,tbody select,tbody textarea{min-height:42px;padding:8px 10px;border-color:transparent;background:var(--bg);border-radius:10px;}
+tbody input:focus,tbody select:focus,tbody textarea:focus{border-color:var(--green2);background:#fff;}
+textarea.nome-produto{
+  text-align:left;font-weight:500;font-size:16px !important;
+  resize:none;overflow:hidden;line-height:1.35;
+  min-height:42px;height:auto;
+  white-space:pre-wrap;word-break:break-word;
+  display:block;width:100%;
+}
 
 /* ── BOTÕES ─────────────────────────────────────────────────────── */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:12px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text2);font-family:'Inter',sans-serif;transition:all .15s;}
@@ -432,7 +439,7 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
           </div>
         </div>
         <table>
-          <colgroup><col style="width:4%"><col style="width:21%"><col style="width:11%"><col style="width:12%"><col style="width:14%"><col style="width:16%"><col style="width:16%"><col style="width:6%"></colgroup>
+          <colgroup><col style="width:7%"><col style="width:27%"><col style="width:10%"><col style="width:11%"><col style="width:13%"><col style="width:14%"><col style="width:14%"><col style="width:4%"></colgroup>
           <thead><tr>
             <th></th><th>Ingrediente</th><th>%</th><th>Qtd (kg)</th>
             <th>Preço/kg</th><th>Custo lote</th><th>Custo/kg ração</th><th>Notas</th>
@@ -971,7 +978,16 @@ function buildNameCell(id, name){
       ${opts}
     </select>`;
   }
-  return `<input type="text" id="name-${id}" value="${name}" title="${name.replace(/"/g,'&quot;')}" placeholder="Nome" style="text-align:left;font-weight:500;" oninput="this.title=this.value">`;
+  const esc=name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  return `<textarea rows="1" id="name-${id}" title="${name.replace(/"/g,'&quot;')}" placeholder="Nome" class="nome-produto" onkeydown="if(event.key==='Enter')event.preventDefault()" oninput="this.title=this.value;autoGrow(this)">${esc}</textarea>`;
+}
+// campo cresce em altura para caber o nome completo
+function autoGrow(el){
+  el.style.height='auto';
+  el.style.height=el.scrollHeight+'px';
+}
+function autoGrowAll(){
+  document.querySelectorAll('textarea.nome-produto').forEach(autoGrow);
 }
 
 function onNucleoChange(id, sel){
@@ -1012,6 +1028,8 @@ function addIng(name='',pct=0,price=0,nota=''){
   const sel=tr.querySelector('select[id^="name-"]');
   if(sel) sel.addEventListener('change',()=>{ recalcIng(); saveDB(); });
   makeIngRowDraggable(tr);
+  const ta=tr.querySelector('textarea.nome-produto');
+  if(ta)requestAnimationFrame(()=>autoGrow(ta));
   recalcIng();
 }
 
@@ -1933,7 +1951,8 @@ function addFromBiblioSelect() {
   showToast('✓ "' + item.name + '" adicionado!', 'ok');
 }
 
-function renderBiblio() {
+function renderBiblio() { _renderBiblio(); requestAnimationFrame(autoGrowAll); }
+function _renderBiblio() {
   const tbody = document.getElementById('biblio-body');
   if (!tbody) return;
   const filtered = biblioFilter ? biblioteca.filter(i => i.category === biblioFilter) : biblioteca;
@@ -1950,8 +1969,8 @@ function renderBiblio() {
       : '<span style="color:var(--text3);">= igual</span>';
     return `<tr style="border-bottom:1px solid var(--border);">
       <td><button class="btn-ghost" onclick="deleteBiblioItem(${item.id})">×</button></td>
-      <td><input type="text" value="${item.name}" title="${item.name.replace(/"/g,'&quot;')}" style="text-align:left;font-weight:500;"
-          oninput="this.title=this.value" onchange="updateBiblio(${item.id},'name',this.value)"></td>
+      <td><textarea rows="1" class="nome-produto" onkeydown="if(event.key==='Enter')event.preventDefault()" title="${item.name.replace(/"/g,'&quot;')}"
+          oninput="this.title=this.value;autoGrow(this)" onchange="updateBiblio(${item.id},'name',this.value)">${item.name.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</textarea></td>
       <td><input type="number" min="0" step="0.01" value="${item.price.toFixed(2)}"
           style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--green);"
           oninput="updateBiblio(${item.id},'price',parseFloat(this.value)||0)"></td>
