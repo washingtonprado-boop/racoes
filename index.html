@@ -14,7 +14,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Calculadora de Ração</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
@@ -35,11 +35,16 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-tap-highlight-color:transparent;scroll-behavior:smooth;}
 body{
-  font-family:'DM Sans',system-ui,sans-serif;
+  font-family:'Inter',system-ui,-apple-system,sans-serif;
   background:var(--bg);color:var(--text);
   font-size:17px;line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  font-feature-settings:'tnum' 1,'cv11' 1; /* números tabulares e alinhados */
   -webkit-overflow-scrolling:touch;overscroll-behavior:none;
 }
+h1,h2,h3,.sec,.card-title{letter-spacing:-.015em;}
+.metric-value,.strip-value,.period-metric-value{letter-spacing:-.02em;}
 
 /* ── CABEÇALHO ──────────────────────────────────────────────────── */
 .app-header{
@@ -50,8 +55,8 @@ body{
   height:calc(56px + env(safe-area-inset-top,0));
 }
 .app-header h1{font-size:19px;font-weight:700;letter-spacing:-.01em;}
-.app-header span{font-size:12px;font-family:'DM Mono',monospace;}
-.conn-dot{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:'DM Mono',monospace;opacity:.95;}
+.app-header span{font-size:12px;font-family:'JetBrains Mono',monospace;}
+.conn-dot{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-family:'JetBrains Mono',monospace;opacity:.95;}
 .conn-dot::before{content:'';width:9px;height:9px;border-radius:50%;background:#9ca3af;flex-shrink:0;}
 .conn-dot.online::before{background:#4ade80;box-shadow:0 0 8px #4ade80;}
 .conn-dot.offline::before{background:#fbbf24;}
@@ -66,7 +71,7 @@ body{
 /* ── BARRA DE DADOS (desktop) ───────────────────────────────────── */
 .db-bar{display:none;background:var(--white);border-bottom:1px solid var(--border);padding:8px 16px;align-items:center;gap:8px;flex-wrap:wrap;}
 .db-bar span{font-size:14px;color:var(--text3);}
-.db-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;min-height:42px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--green);font-family:'DM Sans',sans-serif;}
+.db-btn{display:inline-flex;align-items:center;gap:6px;padding:9px 16px;min-height:42px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--white);color:var(--green);font-family:'Inter',sans-serif;}
 .db-btn:hover{background:var(--green);color:#fff;border-color:var(--green);}
 .db-btn.danger{color:var(--red);}
 .db-btn.danger:hover{background:var(--red);color:#fff;border-color:var(--red);}
@@ -110,17 +115,17 @@ tfoot td:first-child{text-align:left;color:var(--green);}
 input[type="number"],input[type="date"],input[type="text"],textarea,select{
   width:100%;min-height:48px;padding:10px 12px;
   border:1.5px solid var(--border);border-radius:12px;
-  font-size:16px !important;font-family:'DM Sans',sans-serif;
+  font-size:16px !important;font-family:'Inter',sans-serif;
   color:var(--text);background:#fff;
 }
-input[type="number"]{text-align:right;font-family:'DM Mono',monospace;}
+input[type="number"]{text-align:right;font-family:'JetBrains Mono',monospace;}
 textarea{min-height:90px;line-height:1.6;resize:vertical;}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(22,163,74,.15);}
 tbody input,tbody select{min-height:42px;padding:8px 10px;border-color:transparent;background:var(--bg);border-radius:10px;}
 tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;}
 
 /* ── BOTÕES ─────────────────────────────────────────────────────── */
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:12px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .15s;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:12px 20px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--border);background:var(--white);color:var(--text2);font-family:'Inter',sans-serif;transition:all .15s;}
 .btn:active{transform:scale(.98);}
 .btn:hover{border-color:var(--green2);color:var(--green);background:var(--green3);}
 .btn-green{background:var(--green);color:#fff;border-color:var(--green);}
@@ -135,17 +140,17 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .g4{grid-template-columns:repeat(2,1fr);}
 .metric{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px;box-shadow:var(--shadow);}
 .metric-label{font-size:13px;font-weight:600;color:var(--text3);letter-spacing:0;text-transform:none;margin-bottom:4px;}
-.metric-value{font-size:24px;font-weight:700;color:var(--text);font-family:'DM Mono',monospace;}
+.metric-value{font-size:24px;font-weight:700;color:var(--text);font-family:'JetBrains Mono',monospace;}
 .metric.accent{border-color:var(--green4);background:var(--green3);}
 .metric.accent .metric-value{color:var(--green);}
 .summary-strip{background:var(--green);color:#fff;border-radius:var(--radius);padding:18px;display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px;}
 .strip-label{font-size:13px;font-weight:600;opacity:.85;margin-bottom:2px;letter-spacing:0;text-transform:none;}
-.strip-value{font-size:22px;font-weight:700;font-family:'DM Mono',monospace;}
+.strip-value{font-size:22px;font-weight:700;font-family:'JetBrains Mono',monospace;}
 .alert{padding:14px 16px;border-radius:12px;font-size:15px;font-weight:500;display:none;margin-bottom:12px;}
 .alert-warn{background:var(--amber-bg);color:var(--amber);}
 .alert-ok{background:var(--green3);color:var(--green);}
-.val{font-family:'DM Mono',monospace;color:var(--green);font-weight:600;}
-.computed{color:var(--text2);font-family:'DM Mono',monospace;font-size:15px;}
+.val{font-family:'JetBrains Mono',monospace;color:var(--green);font-weight:600;}
+.computed{color:var(--text2);font-family:'JetBrains Mono',monospace;font-size:15px;}
 
 /* ── LOTE ───────────────────────────────────────────────────────── */
 .lote-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px;background:var(--white);border:1px solid var(--border);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);}
@@ -164,7 +169,7 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .preset-brand.open .preset-phases{display:flex;}
 .preset-brand.open{border-color:var(--green4);}
 .preset-phase{display:flex;align-items:center;gap:8px;}
-.preset-phase-btn{flex:1;min-height:48px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--green4);background:var(--green3);color:var(--green);font-family:'DM Sans',sans-serif;text-align:left;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.preset-phase-btn{flex:1;min-height:48px;padding:12px 14px;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;border:1.5px solid var(--green4);background:var(--green3);color:var(--green);font-family:'Inter',sans-serif;text-align:left;white-space:normal;word-break:break-word;line-height:1.35;}
 .preset-phase-btn:active{background:var(--green);color:#fff;}
 .preset-add-btn{display:none;width:100%;font-size:14px;min-height:44px;justify-content:center;margin-bottom:8px;}
 .preset-brand.open .preset-add-btn{display:flex;}
@@ -175,8 +180,8 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .modal{background:var(--white);border-radius:20px 20px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom,0));width:100%;max-height:88vh;overflow-y:auto;}
 .modal h3{font-size:19px;font-weight:700;color:var(--green);margin-bottom:16px;}
 .preset-ing-row{display:grid;grid-template-columns:1fr 78px 84px 40px;gap:8px;align-items:center;margin-bottom:8px;}
-.preset-ing-row input{min-height:46px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:15px !important;font-family:'DM Sans',sans-serif;}
-.preset-ing-row input[type="number"]{text-align:right;font-family:'DM Mono',monospace;}
+.preset-ing-row input{min-height:46px;padding:8px 10px;border:1.5px solid var(--border);border-radius:10px;font-size:15px !important;font-family:'Inter',sans-serif;}
+.preset-ing-row input[type="number"]{text-align:right;font-family:'JetBrains Mono',monospace;}
 .col-lbl{font-size:12px;font-weight:600;color:var(--text3);letter-spacing:0;text-transform:none;}
 .modal-footer{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;padding-top:16px;border-top:1px solid var(--border);}
 .modal-footer .btn{flex:1;}
@@ -190,7 +195,7 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .period-metric{padding:14px 16px;border-top:1px solid var(--border);}
 .period-metric:nth-child(odd){border-right:1px solid var(--border);}
 .period-metric-label{font-size:13px;font-weight:600;color:var(--text3);letter-spacing:0;text-transform:none;margin-bottom:2px;}
-.period-metric-value{font-size:20px;font-weight:700;font-family:'DM Mono',monospace;}
+.period-metric-value{font-size:20px;font-weight:700;font-family:'JetBrains Mono',monospace;}
 .period-metric.highlight .period-metric-value{color:var(--green);}
 .period-row td{font-size:15px;}
 
@@ -230,11 +235,11 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .formula-ref-card{background:var(--white);border:1px solid var(--border);border-radius:14px;margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow);}
 .formula-ref-head{background:var(--green3);padding:12px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
 .formula-ref-title{font-size:15px;font-weight:700;color:var(--green);}
-.formula-ref-ckg{font-size:13px;font-family:'DM Mono',monospace;color:var(--green2);}
+.formula-ref-ckg{font-size:13px;font-family:'JetBrains Mono',monospace;color:var(--green2);}
 .formula-ref-body{padding:10px 14px;}
 .formula-ing-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:15px;}
 .formula-ing-row:last-child{border-bottom:none;}
-.ing-badge{background:var(--green3);color:var(--green);font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;font-family:'DM Mono',monospace;}
+.ing-badge{background:var(--green3);color:var(--green);font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;font-family:'JetBrains Mono',monospace;}
 .especie-ing-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .especie-ing-item{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:12px;display:flex;align-items:center;justify-content:space-between;gap:8px;box-shadow:var(--shadow);}
 .especie-ing-name{font-size:14px;font-weight:500;}
@@ -260,7 +265,7 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
   z-index:500;box-shadow:0 -2px 16px rgba(0,0,0,.08);
 }
 .bottom-nav-items{display:flex;justify-content:space-around;align-items:center;}
-.bottom-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;cursor:pointer;border-radius:12px;min-width:60px;border:none;background:none;font-family:'DM Sans',sans-serif;}
+.bottom-nav-item{display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 12px;cursor:pointer;border-radius:12px;min-width:60px;border:none;background:none;font-family:'Inter',sans-serif;}
 .bottom-nav-item:active{background:var(--green3);}
 .nav-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:21px;background:transparent;color:var(--text3);transition:all .15s;}
 .nav-label{font-size:12px;color:var(--text3);font-weight:600;white-space:nowrap;}
@@ -272,7 +277,7 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .more-drawer.open{display:block;animation:slideIn .2s ease;}
 .more-drawer-title{font-size:14px;font-weight:700;color:var(--text3);margin-bottom:10px;padding:0 4px;letter-spacing:0;text-transform:none;}
 .more-drawer-items{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
-.more-drawer-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 6px;border-radius:14px;cursor:pointer;border:none;background:var(--bg);font-family:'DM Sans',sans-serif;min-height:76px;}
+.more-drawer-item{display:flex;flex-direction:column;align-items:center;gap:5px;padding:14px 6px;border-radius:14px;cursor:pointer;border:none;background:var(--bg);font-family:'Inter',sans-serif;min-height:76px;}
 .more-drawer-item:active,.more-drawer-item.active{background:var(--green3);}
 .more-drawer-item span:first-child{font-size:26px;}
 .more-drawer-item span:last-child{font-size:13px;color:var(--text2);font-weight:600;text-align:center;}
@@ -302,6 +307,11 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
 .drag-handle{cursor:grab;font-size:18px;color:var(--text3);padding:0 6px;line-height:1;user-select:none;flex-shrink:0;min-width:32px;text-align:center;}
 .drag-handle:active{cursor:grabbing;}
 .preset-phase.dragging{opacity:.4;background:var(--green3);border-radius:10px;}
+#ing-body tr.dragging{opacity:.4;background:var(--green3);}
+#ing-body tr.dragging td{border-top:2px dashed var(--green);border-bottom:2px dashed var(--green);}
+.preset-brand.dragging{opacity:.45;border:2px dashed var(--green);}
+.ing-drag,.brand-drag{cursor:grab;}
+.ing-drag:active,.brand-drag:active{cursor:grabbing;color:var(--green);}
 .preset-phase.drag-over{border-top:2px solid var(--green);margin-top:-2px;}
 .preset-phase.touch-dragging{opacity:.5;transform:scale(.97);}
 .drag-ghost{position:fixed;pointer-events:none;z-index:9999;background:var(--white);border:2px solid var(--green);border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600;color:var(--green);box-shadow:0 8px 24px rgba(0,0,0,.2);white-space:nowrap;max-width:240px;overflow:hidden;text-overflow:ellipsis;}
@@ -329,6 +339,7 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
   .info-grid.g3{grid-template-columns:1fr 1fr 1fr;}
   .presets-bar{flex-direction:row;flex-wrap:wrap;align-items:flex-start;}
   .preset-brand{min-width:220px;flex:1;}
+  .preset-brand.open{flex:1 1 100%;} /* aberta = largura total, nomes completos */
   .overlay{align-items:center;}
   .modal{border-radius:20px;width:540px;max-width:95vw;padding:24px;}
   .modal-footer .btn{flex:0 1 auto;}
@@ -349,8 +360,8 @@ tbody input:focus,tbody select:focus{border-color:var(--green2);background:#fff;
   <h1>🌾 Calculadora de Ração</h1>
   <div style="display:flex;align-items:center;gap:10px;">
     <span class="conn-dot" id="conn-dot" title="Status da conexão">local</span>
-    <span class="db-saved-label" style="font-size:13px;opacity:.6;font-family:'DM Mono',monospace;"></span>
-    <span style="font-size:13px;opacity:.5;font-family:'DM Mono',monospace;" class="desktop-only">v6.0</span>
+    <span class="db-saved-label" style="font-size:13px;opacity:.6;font-family:'JetBrains Mono',monospace;"></span>
+    <span style="font-size:13px;opacity:.5;font-family:'JetBrains Mono',monospace;" class="desktop-only">v6.0</span>
   </div>
 </div>
 
@@ -950,11 +961,14 @@ function addIng(name='',pct=0,price=0,nota=''){
   const id=ingCount++;ings.push({id});
   const tr=document.createElement('tr');tr.dataset.id=id;
   tr.innerHTML=`
-    <td><button class="btn-ghost" onclick="removeIng(${id},this)">×</button></td>
+    <td><div style="display:flex;align-items:center;">
+      <span class="drag-handle ing-drag" title="Arrastar para reordenar">⠿</span>
+      <button class="btn-ghost" onclick="removeIng(${id},this)">×</button>
+    </div></td>
     <td>${buildNameCell(id,name)}</td>
-    <td><input type="number" id="pct-${id}" min="0" max="100" step="0.1" value="${pct}" style="font-family:'DM Mono',monospace;font-weight:500;"></td>
+    <td><input type="number" id="pct-${id}" min="0" max="100" step="0.1" value="${pct}" style="font-family:'JetBrains Mono',monospace;font-weight:500;"></td>
     <td class="computed" id="qty-${id}">—</td>
-    <td><input type="number" id="price-${id}" min="0" step="0.01" value="${price}" style="font-family:'DM Mono',monospace;"></td>
+    <td><input type="number" id="price-${id}" min="0" step="0.01" value="${price}" style="font-family:'JetBrains Mono',monospace;"></td>
     <td class="val" id="clote-${id}">—</td>
     <td class="val" id="ckg-${id}">—</td>
     <td><input type="text" id="nota-${id}" value="${nota}" placeholder="—" style="font-size:13px;"></td>`;
@@ -962,7 +976,41 @@ function addIng(name='',pct=0,price=0,nota=''){
   tr.querySelectorAll('input').forEach(i=>i.addEventListener('input',recalcIng));
   const sel=tr.querySelector('select[id^="name-"]');
   if(sel) sel.addEventListener('change',()=>{ recalcIng(); saveDB(); });
+  makeIngRowDraggable(tr);
   recalcIng();
+}
+
+// ── ARRASTAR INGREDIENTES (mouse) ────────────────────────────────────────────
+let _dragIngRow=null;
+function makeIngRowDraggable(tr){
+  const handle=tr.querySelector('.ing-drag');
+  if(!handle)return;
+  // só arrasta pegando na alça (não atrapalha a edição dos campos)
+  handle.addEventListener('mousedown',()=>{tr.draggable=true;});
+  handle.addEventListener('mouseup',()=>{tr.draggable=false;});
+  tr.addEventListener('dragstart',e=>{
+    if(!tr.draggable)return;
+    _dragIngRow=tr;tr.classList.add('dragging');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain','ing');
+  });
+  tr.addEventListener('dragend',()=>{
+    if(_dragIngRow!==tr)return;
+    tr.classList.remove('dragging');tr.draggable=false;_dragIngRow=null;
+    syncIngsOrder();
+  });
+  tr.addEventListener('dragover',e=>{
+    if(!_dragIngRow||_dragIngRow===tr)return;
+    e.preventDefault();
+    const r=tr.getBoundingClientRect();
+    const depois=e.clientY>r.top+r.height/2;
+    tr.parentNode.insertBefore(_dragIngRow,depois?tr.nextSibling:tr);
+  });
+}
+function syncIngsOrder(){
+  const ordem=[...document.querySelectorAll('#ing-body tr')].map(t=>parseInt(t.dataset.id));
+  ings.sort((a,b)=>ordem.indexOf(a.id)-ordem.indexOf(b.id));
+  recalcIng();saveDB();
 }
 function removeIng(id,btn){ings.splice(ings.findIndex(i=>i.id===id),1);btn.closest('tr').remove();recalcIng();saveDB();}
 
@@ -974,7 +1022,10 @@ function renderPresets(){
   Object.entries(presets).forEach(([key,brand])=>{
     const div=document.createElement('div');div.className='preset-brand';div.id='brand-'+key;
     div.innerHTML=`<div class="preset-brand-header" onclick="toggleBrand('${key}')">
-        <div class="preset-brand-name" title="${brand.name.replace(/"/g,'&quot;')}">${brand.name} <span style="font-size:13px;font-weight:400;color:var(--text3);">(${brand.phases.length})</span></div>
+        <div style="display:flex;align-items:center;gap:6px;min-width:0;">
+          <span class="drag-handle brand-drag" title="Arrastar marca" onclick="event.stopPropagation()">⠿</span>
+          <div class="preset-brand-name" title="${brand.name.replace(/"/g,'&quot;')}">${brand.name} <span style="font-size:13px;font-weight:400;color:var(--text3);">(${brand.phases.length})</span></div>
+        </div>
         <div style="display:flex;align-items:center;gap:4px;">
           <button class="btn-ghost" onclick="event.stopPropagation();deleteBrand('${key}')" title="Excluir marca" style="font-size:14px;color:var(--red);">🗑</button>
           <span class="preset-chevron">▼</span>
@@ -1004,13 +1055,17 @@ function renderPresets(){
       });
       row.addEventListener('dragend', ()=>row.classList.remove('dragging'));
       row.addEventListener('dragover', e=>{
+        if(_dragBrandEl||_dragIngRow)return; // marca/ingrediente em arrasto — ignora
         e.preventDefault();e.dataTransfer.dropEffect='move';
         row.classList.add('drag-over');
       });
       row.addEventListener('dragleave', ()=>row.classList.remove('drag-over'));
       row.addEventListener('drop', e=>{
+        if(_dragBrandEl||_dragIngRow)return;
         e.preventDefault();row.classList.remove('drag-over');
-        const {key:fromKey,idx:fromIdx}=JSON.parse(e.dataTransfer.getData('text/plain'));
+        const raw=e.dataTransfer.getData('text/plain');
+        if(raw==='brand'||raw==='ing')return;
+        const {key:fromKey,idx:fromIdx}=JSON.parse(raw);
         const toIdx=parseInt(row.dataset.idx);
         if(fromKey!==key||fromIdx===toIdx)return;
         const moved=presets[key].phases.splice(fromIdx,1)[0];
@@ -1021,10 +1076,45 @@ function renderPresets(){
       addTouchDrag(row, key, i);
       phasesEl.appendChild(row);
     });
+    makeBrandDraggable(div,key);
   });
   renderCompSourceSelects();
   renderGastosFormulaSelect();
   renderCronoFormulaSelect();
+}
+
+// ── ARRASTAR MARCAS (mouse) ─────────────────────────────────────────────────
+let _dragBrandEl=null;
+function makeBrandDraggable(div,key){
+  const handle=div.querySelector('.brand-drag');
+  if(!handle)return;
+  handle.addEventListener('mousedown',e=>{e.stopPropagation();div.draggable=true;});
+  handle.addEventListener('mouseup',()=>{div.draggable=false;});
+  div.addEventListener('dragstart',e=>{
+    if(e.target!==div)return; // fases têm o próprio arrasto
+    _dragBrandEl=div;div.classList.add('dragging');
+    e.dataTransfer.effectAllowed='move';
+    e.dataTransfer.setData('text/plain','brand');
+  });
+  div.addEventListener('dragend',()=>{
+    if(_dragBrandEl!==div)return;
+    div.classList.remove('dragging');div.draggable=false;_dragBrandEl=null;
+    syncBrandOrder();
+  });
+  div.addEventListener('dragover',e=>{
+    if(!_dragBrandEl||_dragBrandEl===div)return;
+    e.preventDefault();
+    const r=div.getBoundingClientRect();
+    const depois=(e.clientY>r.top+r.height/2)||(e.clientY>=r.top&&e.clientY<=r.bottom&&e.clientX>r.left+r.width/2);
+    div.parentNode.insertBefore(_dragBrandEl,depois?div.nextSibling:div);
+  });
+}
+function syncBrandOrder(){
+  const chaves=[...document.querySelectorAll('#presets-bar .preset-brand')].map(d=>d.id.replace('brand-',''));
+  const copia={};chaves.forEach(k=>{if(presets[k])copia[k]=presets[k];});
+  Object.keys(presets).forEach(k=>delete presets[k]);
+  Object.assign(presets,copia);
+  renderPresets();saveDB();
 }
 
 function toggleBrand(key){
@@ -1091,7 +1181,7 @@ function renderModalOverlay(key,idx,phaseName){
   const overlay=document.createElement('div');overlay.className='overlay';
   overlay.innerHTML=`<div class="modal" style="width:620px;max-height:85vh;overflow-y:auto;">
     <h3 style="margin-bottom:16px;">${presets[key].name} —
-      <input id="mpname" value="${phaseName}" style="border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:15px;font-weight:700;color:var(--green);font-family:'DM Sans',sans-serif;width:210px;">
+      <input id="mpname" value="${phaseName}" style="border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:15px;font-weight:700;color:var(--green);font-family:'Inter',sans-serif;width:210px;">
     </h3>
 
     <div style="background:var(--green3);border-radius:8px;padding:10px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
@@ -1162,13 +1252,13 @@ function renderModalRows(){
 
     const pctInput=document.createElement('input');
     pctInput.type='number';pctInput.min='0';pctInput.max='100';pctInput.step='0.1';pctInput.className='m-pct';
-    pctInput.value=row.pct;pctInput.style.cssText='text-align:right;font-family:"DM Mono",monospace;font-weight:600;';
+    pctInput.value=row.pct;pctInput.style.cssText='text-align:right;font-family:"JetBrains Mono",monospace;font-weight:600;';
     pctInput.addEventListener('input',updateModalSoma);
     div.appendChild(pctInput);
 
     const priceInput=document.createElement('input');
     priceInput.type='number';priceInput.min='0';priceInput.step='0.01';priceInput.className='m-price';
-    priceInput.value=row.price.toFixed(2);priceInput.style.cssText='text-align:right;font-family:"DM Mono",monospace;color:var(--green);font-weight:600;';
+    priceInput.value=row.price.toFixed(2);priceInput.style.cssText='text-align:right;font-family:"JetBrains Mono",monospace;color:var(--green);font-weight:600;';
     div.appendChild(priceInput);
 
     const delBtn=document.createElement('button');
@@ -1267,12 +1357,15 @@ function renderCronoFormulaSelect(){
       const opt=document.createElement('option');
       opt.value=key+'::'+i;
       const ckg=phase.ingredients.reduce((s,ing)=>s+(ing.pct/100)*ing.price,0);
-      opt.textContent=(phase.name||'Fase '+(i+1))+' — R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+      const full=brand.name+' · '+(phase.name||'Fase '+(i+1));
+      opt.textContent=full+' — R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+      opt.title=full;
       grp.appendChild(opt);
     });
     sel.appendChild(grp);
   });
   if(cur)sel.value=cur;
+  sel.title=sel.selectedOptions[0]?sel.selectedOptions[0].textContent:'';
   updateCronoCkgLabel();
 }
 
@@ -1303,7 +1396,9 @@ function getActiveCustoKg(){
   return getCustoKg();
 }
 
+function _syncSelTitle(id){const s=document.getElementById(id);if(s)s.title=s.selectedOptions[0]?s.selectedOptions[0].textContent:'';}
 function onCronoFormulaChange(){
+  _syncSelTitle('crono-formula-sel');_syncSelTitle('gastos-formula-sel');
   // sync gastos selector to same value
   const sel=document.getElementById('crono-formula-sel');
   const gSel=document.getElementById('gastos-formula-sel');
@@ -1335,12 +1430,15 @@ function renderGastosFormulaSelect(){
       const opt=document.createElement('option');
       opt.value=key+'::'+i;
       const ckg=phase.ingredients.reduce((s,ing)=>s+(ing.pct/100)*ing.price,0);
-      opt.textContent=(phase.name||'Fase '+(i+1))+' — R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+      const full=brand.name+' · '+(phase.name||'Fase '+(i+1));
+      opt.textContent=full+' — R$\u00a0'+ckg.toFixed(3).replace('.',',')+'/kg';
+      opt.title=full;
       grp.appendChild(opt);
     });
     sel.appendChild(grp);
   });
   if(cur)sel.value=cur;
+  sel.title=sel.selectedOptions[0]?sel.selectedOptions[0].textContent:'';
   updateGastosCkgLabel();
 }
 
@@ -1423,7 +1521,7 @@ function addPeriod(){
     <td><input type="number" id="cons-${pid}" min="0" step="0.1" value="2.5"></td>
     <td class="val" id="cdia-${pid}">—</td>
     <td class="val" id="cmes-${pid}">—</td>
-    <td style="color:var(--text3);font-family:'DM Mono',monospace;font-size:14px;" id="dias-${pid}">—</td>
+    <td style="color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:14px;" id="dias-${pid}">—</td>
     <td><input type="text" id="nota-per-${pid}" placeholder="Notas..." style="font-size:13px;"></td>
     <td><button class="btn-ghost" onclick="this.closest('tr').remove();recalcPeriods();">×</button></td>`;
   document.getElementById('period-body').appendChild(tr);
@@ -1479,12 +1577,15 @@ function renderCompSourceSelects() {
       brand.phases.forEach((phase, i) => {
         const opt = document.createElement('option');
         opt.value = key + '::' + i;
-        opt.textContent = phase.name || 'Fase ' + (i+1);
+        const full = brand.name + ' · ' + (phase.name || 'Fase ' + (i+1));
+        opt.textContent = full;
+        opt.title = full;
         grp.appendChild(opt);
       });
       sel.appendChild(grp);
     });
     if (current) sel.value = current;
+    sel.title = sel.selectedOptions[0] ? sel.selectedOptions[0].textContent : '';
   });
 }
 
@@ -1576,7 +1677,7 @@ function renderEstoque(){
     const tdQty=document.createElement('td');
     const qtyInp=document.createElement('input');
     qtyInp.type='number';qtyInp.min='0';qtyInp.step='0.1';qtyInp.value=qty.toFixed(1);
-    qtyInp.style.cssText='width:90px;text-align:right;font-family:"DM Mono",monospace;';
+    qtyInp.style.cssText='width:90px;text-align:right;font-family:"JetBrains Mono",monospace;';
     qtyInp.addEventListener('change',()=>{estoqueData[name].qty=parseFloat(qtyInp.value)||0;renderEstoque();saveDB();});
     tdQty.appendChild(qtyInp);
     const tdCons=document.createElement('td');tdCons.className='computed';tdCons.textContent=consoDia>0?fmtN(consoDia)+' kg':'—';
@@ -1799,12 +1900,12 @@ function renderBiblio() {
       <td><input type="text" value="${item.name}" title="${item.name.replace(/"/g,'&quot;')}" style="text-align:left;font-weight:500;"
           oninput="this.title=this.value" onchange="updateBiblio(${item.id},'name',this.value)"></td>
       <td><input type="number" min="0" step="0.01" value="${item.price.toFixed(2)}"
-          style="font-family:'DM Mono',monospace;font-weight:600;color:var(--green);"
+          style="font-family:'JetBrains Mono',monospace;font-weight:600;color:var(--green);"
           oninput="updateBiblio(${item.id},'price',parseFloat(this.value)||0)"></td>
       <td><select onchange="updateBiblio(${item.id},'category',this.value)" style="font-size:14px;">
         ${CATEGORIES.map(c=>`<option value="${c}" ${c===item.category?'selected':''}>${c}</option>`).join('')}
       </select></td>
-      <td style="font-size:14px;color:var(--text3);font-family:'DM Mono',monospace;">
+      <td style="font-size:14px;color:var(--text3);font-family:'JetBrains Mono',monospace;">
         ${lastPrice !== null ? 'R$\u00a0'+lastPrice.toFixed(2).replace('.',',')+'<br><span style="font-size:13px;">'+lastDate+'</span>' : '—'}
       </td>
       <td>${varStr}</td>
@@ -2087,7 +2188,7 @@ function selecionarEspecie(key){
       return `<div class="especie-ing-item">
         <div>
           <div class="especie-ing-name">${name}</div>
-          <div style="font-size:13px;color:var(--text3);font-family:'DM Mono',monospace;">${priceStr}</div>
+          <div style="font-size:13px;color:var(--text3);font-family:'JetBrains Mono',monospace;">${priceStr}</div>
         </div>
         <button class="especie-ing-btn" onclick="addIngFromEspecie('${name}')">+ Usar</button>
       </div>`;
@@ -2422,7 +2523,7 @@ function printReport(){window.print();}
 
 function showToast(msg,type='ok'){
   let t=document.getElementById('toast');
-  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:9px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;font-family:DM Sans,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.15);';document.body.appendChild(t);}
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:9px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;font-family:Inter,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.15);';document.body.appendChild(t);}
   t.textContent=msg;t.style.background=type==='ok'?'#1a6b3c':'#991b1b';t.style.color='#fff';t.style.opacity='1';
   clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';},2800);
 }
