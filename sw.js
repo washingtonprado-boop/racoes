@@ -4,7 +4,7 @@
    - CDN (fontes, Chart.js, Firebase JS): cache com revalidação
    - Firebase Realtime Database: SEMPRE rede (nunca cachear dados)
 */
-const CACHE = 'racao-v6-2';
+const CACHE = 'racao-v6-3';
 const SHELL = [
   './',
   './index.html',

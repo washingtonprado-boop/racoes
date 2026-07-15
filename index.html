@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Ração">
-  <meta name="theme-color" content="#1a6b3c">
+  <meta name="theme-color" content="#15803d">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icon-192.png">
   <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -18,6 +18,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <style>
 /* ══════════════════════════════════════════════════════════════════
    DESIGN v6 — mobile-first · foco em LEITURA e SIMPLICIDADE
@@ -45,6 +46,23 @@ body{
 }
 h1,h2,h3,.sec,.card-title{letter-spacing:-.015em;}
 .metric-value,.strip-value,.period-metric-value{letter-spacing:-.02em;}
+
+/* ── MODO ESCURO ────────────────────────────────────────────────── */
+html[data-theme="dark"]{
+  --green:#22c55e; --green2:#4ade80; --green3:#12291a; --green4:#1d4429;
+  --amber:#fbbf24; --amber-bg:#3a2c08;
+  --red:#f87171;   --red-bg:#3a1414;
+  --blue:#93c5fd;  --blue-bg:#12233f; --blue-bd:#1e3a5f;
+  --text:#f3f4f6; --text2:#d1d5db; --text3:#9ca3af;
+  --border:#374151; --bg:#0b1220; --white:#161f2e;
+  --shadow:0 1px 2px rgba(0,0,0,.4);
+}
+html[data-theme="dark"] body{background:var(--bg);color:var(--text);}
+html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:var(--bg) !important;color:var(--text);border-color:var(--border);}
+html[data-theme="dark"] .app-header{background:#0f3d22;}
+html[data-theme="dark"] thead th{background:var(--white);}
+html[data-theme="dark"] .summary-strip{background:#0f3d22;}
+html[data-theme="dark"] tbody input,html[data-theme="dark"] tbody select,html[data-theme="dark"] tbody textarea{background:#0e1626 !important;}
 
 /* ── CABEÇALHO ──────────────────────────────────────────────────── */
 .app-header{
@@ -129,6 +147,7 @@ textarea{min-height:90px;line-height:1.6;resize:vertical;}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--green2);box-shadow:0 0 0 3px rgba(22,163,74,.15);}
 tbody input,tbody select,tbody textarea{min-height:42px;padding:8px 10px;border-color:transparent;background:var(--bg);border-radius:10px;}
 tbody input:focus,tbody select:focus,tbody textarea:focus{border-color:var(--green2);background:#fff;}
+.campo-invalido{border:1.5px solid var(--red) !important;background:var(--red-bg) !important;color:var(--red) !important;}
 .nucleo-nome-completo{font-size:13px;color:var(--text2);margin-top:4px;text-align:left;line-height:1.3;word-break:break-word;white-space:normal;font-weight:500;}
 tbody input.preco-local{border:1.5px solid var(--amber) !important;background:var(--amber-bg) !important;color:var(--amber) !important;}
 textarea.nome-produto{
@@ -379,6 +398,7 @@ textarea.nome-produto{
 <div class="app-header">
   <h1>🌾 Calculadora de Ração</h1>
   <div style="display:flex;align-items:center;gap:10px;">
+    <button id="theme-btn" onclick="alternarTema()" title="Modo claro/escuro" style="background:none;border:none;color:#fff;font-size:18px;cursor:pointer;min-width:40px;min-height:40px;">🌙</button>
     <span class="conn-dot" id="conn-dot" title="Status da conexão">local</span>
     <span class="db-saved-label" style="font-size:13px;opacity:.6;font-family:'JetBrains Mono',monospace;"></span>
     <span style="font-size:13px;opacity:.5;font-family:'JetBrains Mono',monospace;" class="desktop-only">v6.0</span>
@@ -407,6 +427,7 @@ textarea.nome-produto{
   <button class="db-btn" onclick="saveDB(true)">💾 Salvar</button>
   <button class="db-btn" onclick="exportJSON()">⬇ Exportar</button>
   <button class="db-btn" onclick="importJSON()">⬆ Importar</button>
+  <button class="db-btn" onclick="abrirBackups()">🕐 Backups</button>
   <button class="db-btn" onclick="printReport()">🖨 Imprimir</button>
   <button class="db-btn danger" onclick="clearDB()">✕ Limpar</button>
   <span class="db-saved db-saved-label"></span>
@@ -417,7 +438,10 @@ textarea.nome-produto{
   <div class="lote-row">
     <label>Tamanho do lote:</label>
     <input type="number" id="lote-kg" value="100" min="1" step="1">
-    <span style="font-size:14px;color:var(--text3);">kg — base para quantidades</span>
+    <span style="font-size:14px;color:var(--text3);">kg</span>
+    <label style="margin-left:8px;">Saco:</label>
+    <input type="number" id="saco-kg" value="50" min="1" step="1" style="width:90px;">
+    <span style="font-size:14px;color:var(--text3);">kg</span>
   </div>
   <div class="sec sec-toggle" style="margin-top:0;" onclick="togglePresetsSection()">
     <span>Fórmulas prontas por marca</span>
@@ -469,11 +493,15 @@ textarea.nome-produto{
         </div>
       </div>
 
-      <div class="sec">Resumo</div>
+      <div class="sec" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Resumo</span>
+        <button class="btn btn-green" style="min-height:44px;padding:8px 16px;font-size:14px;" onclick="compartilharWhatsApp()">📤 WhatsApp</button>
+      </div>
       <div class="metrics g3">
         <div class="metric accent"><div class="metric-label">Custo/kg ração</div><div class="metric-value" id="sum-ckg">—</div></div>
         <div class="metric"><div class="metric-label">Custo do lote</div><div class="metric-value" id="sum-lote">—</div></div>
         <div class="metric"><div class="metric-label">Ingredientes</div><div class="metric-value" id="sum-ning">—</div></div>
+        <div class="metric"><div class="metric-label">Sacos</div><div class="metric-value" id="sum-sacos" style="font-size:19px;">—</div></div>
       </div>
 </div>
 
@@ -902,14 +930,25 @@ function estadoParaNuvem(state){
 }
 
 // ── SENHA DAS FÓRMULAS ────────────────────────────────────────────────────────
-// Protege adicionar/editar/excluir marcas e fórmulas. TROQUE A SENHA AQUI:
+// Protege adicionar/editar/excluir marcas e fórmulas.
+// A senha oficial fica no Firebase em calculadoraRacao/config/senha
+// (troque pelo console sem mexer no código). Se não existir lá, vale esta:
 const SENHA_FORMULAS='1234';
+let _senhaRemota=null;
+function carregarSenhaRemota(){
+  if(!fbDB)return;
+  fbDB.ref('calculadoraRacao/config/senha').on('value',
+    snap=>{const v=snap.val();_senhaRemota=(v!==null&&v!==undefined)?String(v):null;},
+    ()=>{_senhaRemota=null;}
+  );
+}
+function senhaAtual(){return _senhaRemota!==null?_senhaRemota:SENHA_FORMULAS;}
 let _formulasLiberadas=false; // vale até fechar/recarregar a página
 function comSenha(acao){
   if(_formulasLiberadas){acao();return;}
   const s=prompt('🔒 Senha para gerenciar fórmulas:');
   if(s===null)return; // cancelou
-  if(s===SENHA_FORMULAS){
+  if(s===senhaAtual()){
     _formulasLiberadas=true;
     showToast('🔓 Fórmulas liberadas nesta sessão','ok');
     acao();
@@ -922,6 +961,10 @@ try{
   if(typeof firebase!=='undefined'){
     if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
     fbDB=firebase.database();
+    // login anônimo (invisível para o usuário) — permite travar as regras do banco
+    try{
+      firebase.auth().signInAnonymously().catch(e=>console.warn('Auth anônima indisponível:',e.message));
+    }catch(e){console.warn('Auth não carregada:',e.message);}
     // monitora estado da conexão
     fbDB.ref('.info/connected').on('value',snap=>{
       _fbOnline=!!snap.val();
@@ -931,12 +974,28 @@ try{
   }
 }catch(e){console.error('❌ Erro ao iniciar Firebase:',e);}
 
+if(fbDB)carregarSenhaRemota();
+
 function updateConnDot(){
   const dot=document.getElementById('conn-dot');
   if(!dot)return;
   if(fbDB&&_fbOnline){dot.className='conn-dot online';dot.textContent='nuvem';dot.title='Conectado ao Firebase — dados sincronizados';}
   else{dot.className='conn-dot offline';dot.textContent='local';dot.title='Sem conexão — salvando apenas neste dispositivo';}
 }
+
+// ── TEMA CLARO/ESCURO (preferência deste aparelho) ───────────────────────────
+function aplicarTema(t){
+  document.documentElement.setAttribute('data-theme',t);
+  const b=document.getElementById('theme-btn');
+  if(b)b.textContent=t==='dark'?'☀':'🌙';
+  const meta=document.querySelector('meta[name="theme-color"]');
+  if(meta)meta.content=t==='dark'?'#0f3d22':'#15803d';
+}
+function alternarTema(){
+  const t=document.documentElement.getAttribute('data-theme')==='dark'?'light':'dark';
+  localStorage.setItem('racao_tema',t);aplicarTema(t);
+}
+aplicarTema(localStorage.getItem('racao_tema')||'light');
 
 const fmt  = v=>'R$\u00a0'+v.toFixed(2).replace('.',',');
 const fmtN = (v,d=1)=>v.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
@@ -1024,6 +1083,25 @@ function recalcIng(){
   document.getElementById('foot-custo-lote').textContent=fmt(ckg*lote);
   document.getElementById('foot-ckg').textContent=fmt(ckg)+'/kg';
   document.getElementById('sum-ckg').textContent=fmt(ckg)+'/kg';
+  // validações visuais
+  ings.forEach(({id})=>{
+    const pctEl=document.getElementById('pct-'+id);
+    const prEl=document.getElementById('price-'+id);
+    if(pctEl){
+      const p=parseFloat(pctEl.value)||0;
+      pctEl.classList.toggle('campo-invalido',p>100||p<0);
+      if(p<0)pctEl.value=0;
+    }
+    if(prEl && parseFloat(prEl.value)<0){prEl.value=0;prEl.classList.add('campo-invalido');setTimeout(()=>prEl.classList.remove('campo-invalido'),1200);}
+  });
+  // sacos
+  const sacoKg=parseFloat(document.getElementById('saco-kg')?.value)||50;
+  const nSacos=lote/sacoKg;
+  const inteiros=Math.floor(nSacos), resto=lote-inteiros*sacoKg;
+  const elS=document.getElementById('sum-sacos');
+  if(elS)elS.textContent=resto>0.01
+    ? inteiros+' de '+sacoKg+'kg + '+fmtN(resto)+'kg'
+    : fmtN(nSacos)+' de '+sacoKg+'kg';
   document.getElementById('sum-lote').textContent=fmt(ckg*lote);
   document.getElementById('sum-ning').textContent=ings.length;
   document.getElementById('g-ckg').textContent=fmt(ckg)+'/kg';
@@ -2553,6 +2631,7 @@ function collectState(){
   return{
     version:5,savedAt:new Date().toISOString(),
     lote:document.getElementById('lote-kg').value,
+    sacoKg:document.getElementById('saco-kg')?document.getElementById('saco-kg').value:'50',
     ingredients:ings.map(({id})=>({
       name:getNomingrediente(id),
       pct:document.getElementById('pct-'+id).value,
@@ -2625,6 +2704,7 @@ function _avisoNuvem(){
 function restoreState(data){
   try{
     document.getElementById('lote-kg').value=data.lote||100;
+    if(document.getElementById('saco-kg'))document.getElementById('saco-kg').value=data.sacoKg||50;
 
     // ── carregar biblioteca PRIMEIRO — buildNameCell depende dela ──
     if(data.biblioteca){biblioteca=data.biblioteca;biblioNextId=data.biblioNextId||biblioteca.length+1;}
@@ -2701,6 +2781,37 @@ function clearDB(){
 }
 function printReport(){window.print();}
 
+// ── COMPARTILHAR FORMULAÇÃO NO WHATSAPP ─────────────────────────────────────
+function compartilharWhatsApp(){
+  if(ings.length===0){showToast('✗ Formulação vazia','err');return;}
+  const lote=getLote();
+  const sacoKg=parseFloat(document.getElementById('saco-kg')?.value)||50;
+  let somaPct=0,custoTotal=0;
+  const linhas=ings.map(({id})=>{
+    const nome=getNomingrediente(id)||'—';
+    const pct=parseFloat(document.getElementById('pct-'+id).value)||0;
+    const preco=parseFloat(document.getElementById('price-'+id).value)||0;
+    const kg=lote*pct/100;
+    const custo=kg*preco;
+    somaPct+=pct;custoTotal+=custo;
+    return '• '+nome+': *'+fmtN(kg)+' kg* ('+fmtN(pct)+'%) — '+fmt(custo);
+  });
+  const ckg=lote>0?custoTotal/lote:0;
+  const nS=Math.floor(lote/sacoKg), resto=lote-nS*sacoKg;
+  const sacosTxt=resto>0.01?nS+' sacos de '+sacoKg+'kg + '+fmtN(resto)+'kg':fmtN(lote/sacoKg)+' sacos de '+sacoKg+'kg';
+  const hoje=new Date().toLocaleDateString('pt-BR');
+  const txt='🐂 *FORMULAÇÃO DE RAÇÃO* — '+hoje+'\n'
+    +'Lote: *'+fmtN(lote)+' kg* ('+sacosTxt+')\n'
+    +'─────────────────\n'
+    +linhas.join('\n')+'\n'
+    +'─────────────────\n'
+    +'Total: *'+fmt(custoTotal)+'*\n'
+    +'Custo/kg: *'+fmt(ckg)+'*\n'
+    +(Math.abs(somaPct-100)>0.5?'⚠ Soma dos percentuais: '+fmtN(somaPct)+'%\n':'')
+    +'_Calculadora de Ração — WF Tecnology_';
+  window.open('https://wa.me/?text='+encodeURIComponent(txt),'_blank');
+}
+
 function showToast(msg,type='ok'){
   let t=document.getElementById('toast');
   if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:20px;right:20px;padding:10px 16px;border-radius:9px;font-size:14px;font-weight:600;z-index:9999;opacity:0;transition:opacity .3s;font-family:Inter,sans-serif;box-shadow:0 4px 20px rgba(0,0,0,.15);';document.body.appendChild(t);}
@@ -2718,16 +2829,88 @@ function loadDefaults(){
 
 // ── BOOT ─────────────────────────────────────────────────────────────────────
 document.getElementById('lote-kg').addEventListener('input',recalcIng);
+document.getElementById('saco-kg').addEventListener('input',recalcIng);
 setInterval(()=>saveDB(false),30000);
 document.addEventListener('input',()=>{
   if(document.querySelector('.overlay')||window._restoring)return;
   clearTimeout(window._st);window._st=setTimeout(()=>saveDB(false),2000);
 });
 
+// ── BACKUPS DIÁRIOS (últimos 7 na nuvem) ─────────────────────────────────────
+const FB_BACKUPS='calculadoraRacao/backups';
+function backupDiario(){
+  if(!fbDB)return;
+  const hoje=new Date().toISOString().slice(0,10); // AAAA-MM-DD
+  const ref=fbDB.ref(FB_BACKUPS);
+  ref.child(hoje).once('value').then(snap=>{
+    if(snap.exists())return; // já tem o de hoje
+    const state=collectState();
+    ref.child(hoje).set({json:JSON.stringify(estadoParaNuvem(state)),savedAt:state.savedAt})
+      .then(()=>{
+        console.log('📦 Backup de '+hoje+' criado');
+        // poda: mantém só os 7 mais recentes
+        ref.once('value').then(all=>{
+          const datas=Object.keys(all.val()||{}).sort();
+          while(datas.length>7){ref.child(datas.shift()).remove().catch(()=>{});}
+        });
+      }).catch(e=>console.warn('Backup falhou:',e.message));
+  }).catch(()=>{});
+}
+
+function abrirBackups(){
+  comSenha(()=>{
+    if(!fbDB){showToast('✗ Sem conexão com a nuvem','err');return;}
+    fbDB.ref(FB_BACKUPS).once('value').then(snap=>{
+      const dados=snap.val()||{};
+      const datas=Object.keys(dados).sort().reverse();
+      const ov=document.createElement('div');ov.className='overlay';
+      ov.addEventListener('click',e=>{if(e.target===ov)ov.remove();});
+      const linhas=datas.length===0
+        ? '<p style="color:var(--text3);padding:10px 0;">Nenhum backup ainda. O primeiro é criado automaticamente na primeira abertura de cada dia.</p>'
+        : datas.map(d=>{
+            const dt=d.split('-').reverse().join('/');
+            return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 0;border-bottom:1px solid var(--border);">
+              <span style="font-weight:600;">📦 ${dt}</span>
+              <button class="btn btn-green" style="min-height:42px;padding:8px 16px;" onclick="restaurarBackup('${d}')">Restaurar</button>
+            </div>`;
+          }).join('');
+      ov.innerHTML=`<div class="modal"><h3>🕐 Backups diários</h3>
+        <p style="font-size:14px;color:var(--text2);margin-bottom:10px;">Restaurar substitui os dados atuais pelos daquele dia (um backup do estado atual é feito antes).</p>
+        ${linhas}
+        <div class="modal-footer"><button class="btn" onclick="this.closest('.overlay').remove()">Fechar</button></div>
+      </div>`;
+      document.body.appendChild(ov);
+    }).catch(e=>showToast('✗ Erro ao listar backups: '+e.message,'err'));
+  });
+}
+function restaurarBackup(data){
+  if(!confirm('Restaurar os dados do dia '+data.split('-').reverse().join('/')+'? Os dados atuais serão substituídos.'))return;
+  fbDB.ref(FB_BACKUPS+'/'+data).once('value').then(snap=>{
+    const raw=snap.val();
+    if(!raw||!raw.json){showToast('✗ Backup vazio','err');return;}
+    // salvaguarda: guarda o estado atual antes de restaurar
+    const atual=collectState();
+    fbDB.ref(FB_BACKUPS+'/antes-da-restauracao').set({json:JSON.stringify(estadoParaNuvem(atual)),savedAt:atual.savedAt}).catch(()=>{});
+    const d=JSON.parse(raw.json);
+    window._restoring=true;
+    const ok=restoreState(d);
+    window._restoring=false;
+    document.querySelectorAll('.overlay').forEach(o=>o.remove());
+    if(ok){
+      snapshotPrecosBase(d);
+      aplicarPrecosLocais();
+      _lastSavedJSON='';
+      saveDB(true);
+      showToast('🕐 Backup de '+data.split('-').reverse().join('/')+' restaurado!','ok');
+    }else showToast('✗ Erro ao restaurar','err');
+  }).catch(e=>showToast('✗ '+e.message,'err'));
+}
+
 // ── SINCRONIZAÇÃO ENTRE APARELHOS ────────────────────────────────────────────
 let _dadosNuvemPendentes=null;
 function iniciarEscutaNuvem(){
   if(!fbDB)return;
+  setTimeout(backupDiario,3000); // backup do dia, sem atrapalhar a abertura
   fbDB.ref(FB_PATH).on('value',snap=>{
     const raw=snap.val();
     if(!raw||!raw.json)return;
@@ -2848,6 +3031,9 @@ boot();
     </button>
     <button class="more-drawer-item" onclick="navTo('informacoes');closeMoreDrawer()">
       <span>📋</span><span>Info</span>
+    </button>
+    <button class="more-drawer-item" onclick="abrirBackups();closeMoreDrawer()">
+      <span>🕐</span><span>Backups</span>
     </button>
     <button class="more-drawer-item" onclick="exportJSON();closeMoreDrawer()">
       <span>⬇️</span><span>Exportar</span>
